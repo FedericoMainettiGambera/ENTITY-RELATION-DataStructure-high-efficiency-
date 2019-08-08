@@ -12,6 +12,16 @@ char idRel[100];
 // stringa che la rappresenta
 // riferimento all'albero delle sue relation tracker
 
+void addrel();
+
+void addent();
+
+void delent();
+
+void report();
+
+void delrel();
+
 unsigned int SDBMHash(char* str, unsigned int length) {
     unsigned int hash = 0;
     unsigned int i = 0;
@@ -56,14 +66,6 @@ int main(void) {
     char input[10];
     while(true){
         scanf("%s", &input);
-
-        char c = ' ';
-        int l = 0;
-        while(c!=EOF){
-            c = input[l];
-            l++;
-        }
-        printf("hash value: %d", SDBMHash(&input,l));
 
         if(input[0] == 'a'){
             if(input[3] == 'e'){
