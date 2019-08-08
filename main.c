@@ -12,16 +12,6 @@ char idRel[100];
 // stringa che la rappresenta
 // riferimento all'albero delle sue relation tracker
 
-void addrel();
-
-void addent();
-
-void delent();
-
-void report();
-
-void delrel();
-
 unsigned int SDBMHash(char* str, unsigned int length) {
     unsigned int hash = 0;
     unsigned int i = 0;
@@ -61,7 +51,15 @@ unsigned int SDBMHash(char* str, unsigned int length) {
 // è in un albero ordinato in base all'indirizzo di memoria della relation tracker origin e con possibilità di essere iterato
 // riferimento alla relation tracker origin
 
-//main
+
+void addrel();
+void addent();
+void delent();
+void delrel();
+void report();
+unsigned int SDBMHash(char* str, unsigned int length);
+
+
 int main(void) {
     char input[10];
     while(true){
