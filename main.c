@@ -52,6 +52,7 @@ unsigned int SDBMHash(char* str, unsigned int length) {
 // riferimento alla relation tracker origin
 
 
+/* prototipies */
 void addrel();
 void addent();
 void delent();
@@ -60,6 +61,7 @@ void report();
 unsigned int SDBMHash(char* str, unsigned int length);
 
 
+/* main */
 int main(void) {
     char input[10];
     while(true){
