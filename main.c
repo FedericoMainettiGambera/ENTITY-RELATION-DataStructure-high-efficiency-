@@ -3,32 +3,79 @@
 #define TRUE  1
 #define FALSE 0
 
+#define RED 1
+#define BLACK 0
+
+#define STRING_DIMENSION 100
+#define ENTITY_HASHTABLE_DIMENSION 10000
+
 typedef enum { false, true } bool;
 
-char idEnt[100];
-char idOrig[100];
-char idDest[100];
-char idRel[100];
+char idEnt[STRING_DIMENSION];
+char idOrig[STRING_DIMENSION];
+char idDest[STRING_DIMENSION];
+char idRel[STRING_DIMENSION];
 
 /* entity (quadrato) */
 // è in una hash table
 // stringa che la rappresenta
 // riferimento all'albero delle sue relation tracker
 struct entity{
-    char name[100];
+    char name[STRING_DIMENSION];
     struct relationTracker * entityTreeHead;
+    struct entity * nextEntityWithSameHash;
 };
 
-unsigned int SDBMHash(char* str, unsigned int length) {
+struct entity * entityHashTable[ENTITY_HASHTABLE_DIMENSION];
+
+unsigned int SDBMHash(char* str) {
     unsigned int hash = 0;
     unsigned int i = 0;
 
-    for (i = 0; i < length; str++, i++)
-    {
+    while(true){
         hash = (*str) + (hash << 6) + (hash << 16) - hash;
+        if(str[i] == '\0'){
+            break;
+        }
+        str++;
+        i++;
     }
 
     return hash;
+}
+
+void insertEntityHashTable(char entity[STRING_DIMENSION]){
+    struct entity * entityToAdd;
+    entityToAdd = (struct entity *) malloc(sizeof(struct entity));
+    * entityToAdd->name = entity;
+
+    unsigned int hash = SDBMHash(entity);
+    if(entityHashTable[hash] == NULL){
+        entityHashTable[hash] = entityToAdd;
+    }
+    else{ //collisione
+        //cerca l'elemento nella lista, se lo trova non fa nulla, se non lo trova aggiunge l'elemento in cima alla lista
+        struct entity * currentEntity = entityHashTable[hash];
+        while( currentEntity != NULL ){
+            currentEntity = currentEntity->nextEntityWithSameHash;
+            if(strcmp(* currentEntity->name, entity) == 0){
+                //l'entity esiste già, non far nulla
+                return;
+            }
+        }
+        //l'elemento non esiste, dobbiamo aggiungerlo
+        currentEntity = entityHashTable[hash]->nextEntityWithSameHash;
+        entityHashTable[hash]->nextEntityWithSameHash = entityToAdd;
+        entityToAdd->nextEntityWithSameHash = currentEntity;
+    }
+}
+
+void deleteEntityHashTable(char entity[STRING_DIMENSION]){
+
+}
+
+struct entity * searchEntityHashTable(char entity[STRING_DIMENSION]){
+
 }
 
 /* relation (stella) */
@@ -36,9 +83,10 @@ unsigned int SDBMHash(char* str, unsigned int length) {
 // stringa che rappresenta la relazione
 // riferimento all'albero 2 di relation tracker
 struct relation {
-    char name[100];
+    char name[STRING_DIMENSION];
     struct relation * leftNode;
     struct relation * rightNode;
+    unsigned int nodeColor:1;
     struct relationReceivedFrom * graterNumber;
 };
 
@@ -59,10 +107,12 @@ struct relationTracker{
 
     struct relationTracker * rightNodeEntityTree; // ALBERO 1
     struct relationTracker * leftNodeEntityTree;
+    unsigned int nodeColorEntityTree:1;
 
     struct relationTracker * rightNodeRelationTree; // ALBERO 2
     struct relationTracker * leftNodeRelationTree;
     struct relationTracker * nextEqualNode;
+    unsigned int nodeColorRelationTree:1;
 
     struct relationSentTo * sentToTreeHead;
     struct relationReceivedFrom * receivedFromTreeHead;
@@ -77,6 +127,7 @@ struct relationTracker{
 struct relationSentTo{
     struct relationSentTo * rightNode;
     struct relationSentTo * leftNode;
+    unsigned int nodeColor:1;
 
     struct relationTracker * receiver;
 };
@@ -88,6 +139,7 @@ struct relationSentTo{
 struct relationReceivedFrom{
     struct relationReceivedFrom * rightNode;
     struct relationReceivedFrom * leftNode;
+    unsigned int nodeColor:1;
 
     struct relationTracker * origin;
 };
@@ -98,7 +150,10 @@ void addent();
 void delent();
 void delrel();
 void report();
-unsigned int SDBMHash(char* str, unsigned int length);
+void insertEntityHashTable(char entity[STRING_DIMENSION]);
+void deleteEntityHashTable(char entity[STRING_DIMENSION]);
+struct entity * searchEntityHashTable(char entity[STRING_DIMENSION]);
+unsigned int SDBMHash(char* str);
 
 
 /* main */
@@ -147,6 +202,8 @@ void addent(){
     //O(1):  aggiunge entity all'hash table delle entities se non esiste già
     //
     //TOTAL: O(1)
+
+    insertEntityHashTable(idEnt);
 
 }
 
