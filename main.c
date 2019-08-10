@@ -1,5 +1,8 @@
 #include<stdio.h>
 
+#define TRUE  1
+#define FALSE 0
+
 typedef enum { false, true } bool;
 
 char idEnt[100];
@@ -11,6 +14,10 @@ char idRel[100];
 // è in una hash table
 // stringa che la rappresenta
 // riferimento all'albero delle sue relation tracker
+struct entity{
+    char name[100];
+    struct relationTracker * entityTreeHead;
+};
 
 unsigned int SDBMHash(char* str, unsigned int length) {
     unsigned int hash = 0;
@@ -28,6 +35,12 @@ unsigned int SDBMHash(char* str, unsigned int length) {
 // è in un albero ordinato alfanumericamente e con possibiltà di essere iterato
 // stringa che rappresenta la relazione
 // riferimento all'albero 2 di relation tracker
+struct relation {
+    char name[100];
+    struct relation * leftNode;
+    struct relation * rightNode;
+    struct relationReceivedFrom * graterNumber;
+};
 
 /* relation tracker (rettangolo) */
 // è in due alberi:
@@ -40,17 +53,44 @@ unsigned int SDBMHash(char* str, unsigned int length) {
 // riferimento all'albero delle ralation sent to, cioè delle entities a cui invia la relation
 // riferimento all'albero delle relation received from, cioè delle entities da cui riceve la relation
 // numero di relation received
+struct relationTracker{
+    struct entity * entity;
+    struct relation * relation;
+
+    struct relationTracker * rightNodeEntityTree; // ALBERO 1
+    struct relationTracker * leftNodeEntityTree;
+
+    struct relationTracker * rightNodeRelationTree; // ALBERO 2
+    struct relationTracker * leftNodeRelationTree;
+    struct relationTracker * nextEqualNode;
+
+    struct relationSentTo * sentToTreeHead;
+    struct relationReceivedFrom * receivedFromTreeHead;
+
+    unsigned int numberOfRelationReceived;
+};
 
 /* relation sent to (rombo1) */
-// nota: è accessibile dall'entity
+// nota: è accessibile dall'entity (che si sta eliminando)
 // è in un albero ordinato in base all'indirizzo di memeoria della relation tracker receiver e con posibilità di essere iterato
 // riferimento alla relation tracker receiver
+struct relationSentTo{
+    struct relationSentTo * rightNode;
+    struct relationSentTo * leftNode;
+
+    struct relationTracker * receiver;
+};
 
 /* relation received from (rombo2) */
 // nota: è accessibile dall'entity destinataria
 // è in un albero ordinato in base all'indirizzo di memoria della relation tracker origin e con possibilità di essere iterato
 // riferimento alla relation tracker origin
+struct relationReceivedFrom{
+    struct relationReceivedFrom * rightNode;
+    struct relationReceivedFrom * leftNode;
 
+    struct relationTracker * origin;
+};
 
 /* prototipies */
 void addrel();
@@ -111,7 +151,7 @@ void addent(){
 }
 
 void addrel(){
-    printf("commend: addrel\n");
+    printf("comand: addrel\n");
 
     scanf("%s", &idOrig);
     printf("idOrig: %s\n", idOrig);
@@ -135,7 +175,7 @@ void addrel(){
 }
 
 void delent(){
-    printf("command: delent\n");
+    printf("comand: delent\n");
 
     scanf("%s", &idEnt);
     printf("idEnt: %s\n", idEnt);
@@ -157,7 +197,7 @@ void delent(){
 }
 
 void delrel(){
-    printf("command: delrel\n");
+    printf("comand: delrel\n");
 
     scanf("%s", &idOrig);
     printf("idOrig: %s\n", idOrig);
@@ -178,7 +218,7 @@ void delrel(){
 }
 
 void report(){
-    printf("command: report\n");
+    printf("comand: report\n");
     //O(k):  itera in ogni relation e stampa il primo blocco
     //
     //TOTAL: O(k)
