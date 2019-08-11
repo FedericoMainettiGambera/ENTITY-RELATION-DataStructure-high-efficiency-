@@ -252,7 +252,12 @@ int main(void) {
             //end
             for (int i = 0; i < ENTITY_HASHTABLE_DIMENSION ; ++i) {
                 if(entityHashTable[i].hashChain != NULL){
-                    printf("%s at index %d\n", entityHashTable[i].hashChain->entity->name, i);
+                    printf("[%d]\t -> %s", i, entityHashTable[i].hashChain->entity->name);
+                    struct hashChain * temp = entityHashTable[i].hashChain->nextHashChain;
+                    while(temp != NULL){
+                        printf(" -> %s", temp->entity->name);
+                    }
+                    printf("\n");
                 }
             }
             return 0;
