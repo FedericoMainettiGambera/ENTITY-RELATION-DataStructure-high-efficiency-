@@ -9,7 +9,7 @@
 #define BLACK 0
 
 #define STRING_DIMENSION 100
-#define ENTITY_HASHTABLE_DIMENSION 10000
+#define ENTITY_HASHTABLE_DIMENSION 30
 
 typedef enum { false, true } bool;
 
@@ -37,6 +37,7 @@ struct hashChain{
 };
 
 struct hashCell entityHashTable[ENTITY_HASHTABLE_DIMENSION];
+int numberOfEntityInHashTable = 0;
 
 unsigned int SDBMHash(char* str) {
     unsigned int hash = 0;
@@ -80,6 +81,7 @@ void insertEntityHashTable(char entity[STRING_DIMENSION]){
 
     if(entityHashTable[hash].hashChain == NULL){
         //FIRST TIME ADD ELEMENT IN THAT HASH CELL
+        numberOfEntityInHashTable++;
         entityHashTable[hash].hashChain = malloc(sizeof(struct hashChain));
         (*entityHashTable[hash].hashChain).entity = malloc(sizeof(struct entity));
         memcpy((*(*entityHashTable[hash].hashChain).entity).name, entity, sizeof(char[STRING_DIMENSION]));
@@ -95,6 +97,7 @@ void insertEntityHashTable(char entity[STRING_DIMENSION]){
             currentHashChainElement = *currentHashChainElement.nextHashChain;
         }
         //ADD ELEMENT TO THE HASH CHAIN
+        numberOfEntityInHashTable++;
         currentHashChainElement.nextHashChain = malloc(sizeof(struct hashChain));
         (*currentHashChainElement.nextHashChain).entity = malloc(sizeof(struct entity));
         memcpy((*(*currentHashChainElement.nextHashChain).entity).name, entity, sizeof(char[STRING_DIMENSION]));
@@ -112,8 +115,11 @@ void deleteEntityHashTable(char entity[STRING_DIMENSION]){
     else{
         struct hashChain * currentHashChainElement = entityHashTable[hash].hashChain;
         if(strcmp((*currentHashChainElement).entity->name, entity) == 0) {
+            //ELEMENT FOUND, DELETE AND FREE MEMORY
             entityHashTable[hash].hashChain = (*currentHashChainElement).nextHashChain;
             free(currentHashChainElement);
+            numberOfEntityInHashTable--;
+            return;
         }
         else {
             struct hashChain * previousHashChainElement = entityHashTable[hash].hashChain;
@@ -129,6 +135,7 @@ void deleteEntityHashTable(char entity[STRING_DIMENSION]){
                     //ELEMENT FOUND, DELETE AND FREE MEMORY
                     (*previousHashChainElement).nextHashChain = (*currentHashChainElement).nextHashChain;
                     free(currentHashChainElement);
+                    numberOfEntityInHashTable--;
                     return;
                 }
                 previousHashChainElement = currentHashChainElement;
@@ -342,16 +349,23 @@ void delrel(){
 void report(){
     printf("comand: report\n");
 
+    int numberOfEntityPrinted = 0;
     for (int i = 0; i < ENTITY_HASHTABLE_DIMENSION ; ++i) {
         if(entityHashTable[i].hashChain != NULL){
             printf("[%d]\t -> %s", i, entityHashTable[i].hashChain->entity->name);
+            numberOfEntityPrinted++;
             struct hashChain * temp = entityHashTable[i].hashChain->nextHashChain;
             while(temp != NULL){
                 printf(" -> %s", temp->entity->name);
+                numberOfEntityPrinted++;
             }
             printf("\n");
         }
     }
+
+    printf("hash table dimension: %d", ENTITY_HASHTABLE_DIMENSION);
+    printf("amount of entity stored in the hash table: %d", numberOfEntityInHashTable);
+    printf("amount of entity printed: %d", numberOfEntityPrinted );
     //O(k):  itera in ogni relation e stampa il primo blocco
     //
     //TOTAL: O(k)
