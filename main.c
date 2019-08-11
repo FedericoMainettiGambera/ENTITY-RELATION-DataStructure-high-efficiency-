@@ -250,16 +250,7 @@ int main(void) {
         }
         else{
             //end
-            for (int i = 0; i < ENTITY_HASHTABLE_DIMENSION ; ++i) {
-                if(entityHashTable[i].hashChain != NULL){
-                    printf("[%d]\t -> %s", i, entityHashTable[i].hashChain->entity->name);
-                    struct hashChain * temp = entityHashTable[i].hashChain->nextHashChain;
-                    while(temp != NULL){
-                        printf(" -> %s", temp->entity->name);
-                    }
-                    printf("\n");
-                }
-            }
+            report();
             return 0;
         }
     }
@@ -350,6 +341,17 @@ void delrel(){
 
 void report(){
     printf("comand: report\n");
+
+    for (int i = 0; i < ENTITY_HASHTABLE_DIMENSION ; ++i) {
+        if(entityHashTable[i].hashChain != NULL){
+            printf("[%d]\t -> %s", i, entityHashTable[i].hashChain->entity->name);
+            struct hashChain * temp = entityHashTable[i].hashChain->nextHashChain;
+            while(temp != NULL){
+                printf(" -> %s", temp->entity->name);
+            }
+            printf("\n");
+        }
+    }
     //O(k):  itera in ogni relation e stampa il primo blocco
     //
     //TOTAL: O(k)
