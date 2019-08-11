@@ -1,4 +1,6 @@
 #include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
 
 #define TRUE  1
 #define FALSE 0
@@ -23,10 +25,18 @@ char idRel[STRING_DIMENSION];
 struct entity{
     char name[STRING_DIMENSION];
     struct relationTracker * entityTreeHead;
-    struct entity * nextEntityWithSameHash;
 };
 
-struct entity * entityHashTable[ENTITY_HASHTABLE_DIMENSION];
+struct hashCell{
+    struct hashChain * hashChain;
+};
+
+struct hashChain{
+    struct hashChain * nextHashChain;
+    struct entity * entity;
+};
+
+struct hashCell entityHashTable[ENTITY_HASHTABLE_DIMENSION];
 
 unsigned int SDBMHash(char* str) {
     unsigned int hash = 0;
@@ -44,38 +54,90 @@ unsigned int SDBMHash(char* str) {
     return hash;
 }
 
-void insertEntityHashTable(char entity[STRING_DIMENSION]){
-    struct entity * entityToAdd;
-    entityToAdd = (struct entity *) malloc(sizeof(struct entity));
-    * entityToAdd->name = entity;
+struct entity * searchEntityHashTable(char entity[STRING_DIMENSION]){
+    unsigned int hash = SDBMHash(entity) % ENTITY_HASHTABLE_DIMENSION;
 
-    unsigned int hash = SDBMHash(entity);
-    if(entityHashTable[hash] == NULL){
-        entityHashTable[hash] = entityToAdd;
+    if(entityHashTable[hash].hashChain == NULL){
+        //NOT FOUND
+        return NULL;
     }
-    else{ //collisione
-        //cerca l'elemento nella lista, se lo trova non fa nulla, se non lo trova aggiunge l'elemento in cima alla lista
-        struct entity * currentEntity = entityHashTable[hash];
-        while( currentEntity != NULL ){
-            currentEntity = currentEntity->nextEntityWithSameHash;
-            if(strcmp(* currentEntity->name, entity) == 0){
-                //l'entity esiste già, non far nulla
+    else{
+        struct hashChain currentHashChainElement = *(entityHashTable[hash].hashChain);
+        while(currentHashChainElement.nextHashChain != NULL){
+            if(strcmp(currentHashChainElement.entity->name, entity) == 0){
+                //FOUND
+                return currentHashChainElement.entity;
+            }
+            currentHashChainElement = *currentHashChainElement.nextHashChain;
+        }
+        //NOT FOUND
+        return NULL;
+    }
+}
+
+void insertEntityHashTable(char entity[STRING_DIMENSION]){
+    unsigned int hash = SDBMHash(entity) % ENTITY_HASHTABLE_DIMENSION;
+
+    if(entityHashTable[hash].hashChain == NULL){
+        //FIRST TIME ADD ELEMENT IN THAT HASH CELL
+        entityHashTable[hash].hashChain = malloc(sizeof(struct hashChain));
+        (*entityHashTable[hash].hashChain).entity = malloc(sizeof(struct entity));
+        memcpy((*(*entityHashTable[hash].hashChain).entity).name, entity, sizeof(char[STRING_DIMENSION]));
+        return;
+    }
+    else{
+        struct hashChain currentHashChainElement = *(entityHashTable[hash].hashChain);
+        while(currentHashChainElement.nextHashChain != NULL){
+            if(strcmp(currentHashChainElement.entity->name, entity) == 0){
+                //ALREADY EXISTS
                 return;
             }
+            currentHashChainElement = *currentHashChainElement.nextHashChain;
         }
-        //l'elemento non esiste, dobbiamo aggiungerlo
-        currentEntity = entityHashTable[hash]->nextEntityWithSameHash;
-        entityHashTable[hash]->nextEntityWithSameHash = entityToAdd;
-        entityToAdd->nextEntityWithSameHash = currentEntity;
+        //ADD ELEMENT TO THE HASH CHAIN
+        currentHashChainElement.nextHashChain = malloc(sizeof(struct hashChain));
+        (*currentHashChainElement.nextHashChain).entity = malloc(sizeof(struct entity));
+        memcpy((*(*currentHashChainElement.nextHashChain).entity).name, entity, sizeof(char[STRING_DIMENSION]));
+        return;
     }
 }
 
 void deleteEntityHashTable(char entity[STRING_DIMENSION]){
+    unsigned int hash = SDBMHash(entity) % ENTITY_HASHTABLE_DIMENSION;
 
-}
-
-struct entity * searchEntityHashTable(char entity[STRING_DIMENSION]){
-
+    if(entityHashTable[hash].hashChain == NULL){
+        //ELEMENT DOESN'T EXISTS
+        return;
+    }
+    else{
+        struct hashChain * currentHashChainElement = entityHashTable[hash].hashChain;
+        if(strcmp((*currentHashChainElement).entity->name, entity) == 0) {
+            entityHashTable[hash].hashChain = (*currentHashChainElement).nextHashChain;
+            free(currentHashChainElement);
+        }
+        else {
+            struct hashChain * previousHashChainElement = entityHashTable[hash].hashChain;
+            if((*currentHashChainElement).nextHashChain != NULL){
+                currentHashChainElement = (*currentHashChainElement).nextHashChain;
+            }
+            else{
+                //ELEMENT DOESN'T EXISTS
+                return;
+            }
+            while ((*currentHashChainElement).nextHashChain != NULL) {
+                if (strcmp((*currentHashChainElement).entity->name, entity) == 0) {
+                    //ELEMENT FOUND, DELETE AND FREE MEMORY
+                    (*previousHashChainElement).nextHashChain = (*currentHashChainElement).nextHashChain;
+                    free(currentHashChainElement);
+                    return;
+                }
+                previousHashChainElement = currentHashChainElement;
+                currentHashChainElement = (*currentHashChainElement).nextHashChain;
+            }
+        }
+        //ELEMENT DOESN'T EXISTS
+        return;
+    }
 }
 
 /* relation (stella) */
@@ -188,6 +250,11 @@ int main(void) {
         }
         else{
             //end
+            for (int i = 0; i < ENTITY_HASHTABLE_DIMENSION ; ++i) {
+                if(entityHashTable[i].hashChain != NULL){
+                    printf("%s at index %d\n", entityHashTable[i].hashChain->entity->name, i);
+                }
+            }
             return 0;
         }
     }
@@ -236,6 +303,8 @@ void delent(){
 
     scanf("%s", &idEnt);
     printf("idEnt: %s\n", idEnt);
+
+    deleteEntityHashTable(idEnt);
 
     //O(1):                 cerca se la entity esiste nell'hash table delle entities, se non esiste non fa nulla
     //O(k):                 una volta trovata accede all'albero 1 delle relation tracker e per ognuna di queste:
