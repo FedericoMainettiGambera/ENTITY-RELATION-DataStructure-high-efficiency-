@@ -44,10 +44,10 @@ unsigned int SDBMHash(char* str) {
     unsigned int i = 0;
 
     while(true){
-        hash = (*str) + (hash << 6) + (hash << 16) - hash;
         if(str[i] == '\0'){
             break;
         }
+        hash = (*str) + (hash << 6) + (hash << 16) - hash;
         str++;
         i++;
     }
@@ -60,6 +60,7 @@ struct entity * searchEntityHashTable(char entity[STRING_DIMENSION]){
 
     if(entityHashTable[hash].hashChain == NULL){
         //NOT FOUND
+        printf("entity not found\n");
         return NULL;
     }
     else{
@@ -67,11 +68,13 @@ struct entity * searchEntityHashTable(char entity[STRING_DIMENSION]){
         while(currentHashChainElement.nextHashChain != NULL){
             if(strcmp(currentHashChainElement.entity->name, entity) == 0){
                 //FOUND
+                printf("entity found\n");
                 return currentHashChainElement.entity;
             }
             currentHashChainElement = *currentHashChainElement.nextHashChain;
         }
         //NOT FOUND
+        printf("entity not found\n");
         return NULL;
     }
 }
@@ -81,26 +84,37 @@ void insertEntityHashTable(char entity[STRING_DIMENSION]){
 
     if(entityHashTable[hash].hashChain == NULL){
         //FIRST TIME ADD ELEMENT IN THAT HASH CELL
-        numberOfEntityInHashTable++;
         entityHashTable[hash].hashChain = malloc(sizeof(struct hashChain));
+        (*entityHashTable[hash].hashChain).nextHashChain = NULL;
         (*entityHashTable[hash].hashChain).entity = malloc(sizeof(struct entity));
         memcpy((*(*entityHashTable[hash].hashChain).entity).name, entity, sizeof(char[STRING_DIMENSION]));
+        numberOfEntityInHashTable++;
+        printf("entity added as first ever element of the hash chain\n");
         return;
     }
     else{
-        struct hashChain currentHashChainElement = *(entityHashTable[hash].hashChain);
-        while(currentHashChainElement.nextHashChain != NULL){
-            if(strcmp(currentHashChainElement.entity->name, entity) == 0){
+        struct hashChain * currentHashChainElement = entityHashTable[hash].hashChain;
+        while((*currentHashChainElement).nextHashChain != NULL){
+            if(strcmp((*currentHashChainElement).entity->name, entity) == 0){
                 //ALREADY EXISTS
+                printf("entity already exists, not adding\n");
                 return;
             }
-            currentHashChainElement = *currentHashChainElement.nextHashChain;
+            currentHashChainElement = currentHashChainElement->nextHashChain;
+        }
+        if(strcmp(currentHashChainElement->entity->name, entity) == 0){
+            //ALREADY EXISTS
+            printf("entity already exists, not adding\n");
+            return;
         }
         //ADD ELEMENT TO THE HASH CHAIN
         numberOfEntityInHashTable++;
-        currentHashChainElement.nextHashChain = malloc(sizeof(struct hashChain));
-        (*currentHashChainElement.nextHashChain).entity = malloc(sizeof(struct entity));
-        memcpy((*(*currentHashChainElement.nextHashChain).entity).name, entity, sizeof(char[STRING_DIMENSION]));
+        struct hashChain * new = malloc(sizeof(struct hashChain));
+        new->nextHashChain = NULL;
+        new->entity = malloc(sizeof(struct entity));
+        memcpy(new->entity->name, entity, sizeof(char[STRING_DIMENSION]));
+        currentHashChainElement->nextHashChain = new;
+        printf("entity added as last element of the hash chain\n");
         return;
     }
 }
@@ -110,39 +124,57 @@ void deleteEntityHashTable(char entity[STRING_DIMENSION]){
 
     if(entityHashTable[hash].hashChain == NULL){
         //ELEMENT DOESN'T EXISTS
+        printf("entity doesn't exists, the hash chain is empty\n");
         return;
     }
     else{
         struct hashChain * currentHashChainElement = entityHashTable[hash].hashChain;
+
+        //check if it is the first element
         if(strcmp((*currentHashChainElement).entity->name, entity) == 0) {
             //ELEMENT FOUND, DELETE AND FREE MEMORY
             entityHashTable[hash].hashChain = (*currentHashChainElement).nextHashChain;
             free(currentHashChainElement);
             numberOfEntityInHashTable--;
+            printf("entity deleted, it was the first element in the hash chain\n");
             return;
         }
-        else {
-            struct hashChain * previousHashChainElement = entityHashTable[hash].hashChain;
-            if((*currentHashChainElement).nextHashChain != NULL){
-                currentHashChainElement = (*currentHashChainElement).nextHashChain;
-            }
-            else{
-                //ELEMENT DOESN'T EXISTS
+
+        //set previous and current to iterate the chain
+        struct hashChain * previousHashChainElement = entityHashTable[hash].hashChain;
+        if((*currentHashChainElement).nextHashChain != NULL){
+            currentHashChainElement = (*currentHashChainElement).nextHashChain;
+        }
+        else{
+            //ELEMENT DOESN'T EXISTS
+            printf("entity doesn't exists\n");
+            return;
+        }
+
+        //iterate the chain
+        while(currentHashChainElement->nextHashChain != NULL){
+            if (strcmp((*currentHashChainElement).entity->name, entity) == 0) {
+                //ELEMENT FOUND, DELETE AND FREE MEMORY
+                (*previousHashChainElement).nextHashChain = (*currentHashChainElement).nextHashChain;
+                free(currentHashChainElement);
+                numberOfEntityInHashTable--;
+                printf("entity deleted from the hash chain\n");
                 return;
             }
-            while ((*currentHashChainElement).nextHashChain != NULL) {
-                if (strcmp((*currentHashChainElement).entity->name, entity) == 0) {
-                    //ELEMENT FOUND, DELETE AND FREE MEMORY
-                    (*previousHashChainElement).nextHashChain = (*currentHashChainElement).nextHashChain;
-                    free(currentHashChainElement);
-                    numberOfEntityInHashTable--;
-                    return;
-                }
-                previousHashChainElement = currentHashChainElement;
-                currentHashChainElement = (*currentHashChainElement).nextHashChain;
-            }
+            previousHashChainElement = currentHashChainElement;
+            currentHashChainElement = currentHashChainElement->nextHashChain;
         }
+        if (strcmp((*currentHashChainElement).entity->name, entity) == 0) {
+            //ELEMENT FOUND, DELETE AND FREE MEMORY
+            (*previousHashChainElement).nextHashChain = (*currentHashChainElement).nextHashChain;
+            free(currentHashChainElement);
+            numberOfEntityInHashTable--;
+            printf("entity deleted from the hash chain\n");
+            return;
+        }
+
         //ELEMENT DOESN'T EXISTS
+        printf("entity doesn't exists\n");
         return;
     }
 }
@@ -227,6 +259,12 @@ unsigned int SDBMHash(char* str);
 
 /* main */
 int main(void) {
+
+    //initilizing hash table
+    for (int i = 0; i < ENTITY_HASHTABLE_DIMENSION ; ++i) {
+        entityHashTable[i].hashChain = NULL;
+    }
+
     char input[10];
     while(true){
         scanf("%s", &input);
@@ -267,7 +305,7 @@ void addent(){
     printf("command: addent\n");
 
     scanf("%s", &idEnt);
-    printf("idEnt: %s\n", idEnt);
+    printf("idEnt: %s - hash: %d\n", idEnt, SDBMHash(idEnt)%ENTITY_HASHTABLE_DIMENSION);
 
     //O(1):  aggiunge entity all'hash table delle entities se non esiste già
     //
@@ -278,6 +316,7 @@ void addent(){
 }
 
 void addrel(){
+    /*
     printf("comand: addrel\n");
 
     scanf("%s", &idOrig);
@@ -286,6 +325,7 @@ void addrel(){
     printf("idDest: %s\n", idDest);
     scanf("%s", &idRel);
     printf("idRel: %s\n", idRel);
+    */
 
     //O(1) + O(1):         cerca se le entity origin e receiver esistono nell'hash table delle entities,
     //                     se almeno una non esiste non fa nulla
@@ -305,7 +345,7 @@ void delent(){
     printf("comand: delent\n");
 
     scanf("%s", &idEnt);
-    printf("idEnt: %s\n", idEnt);
+    printf("idEnt: %s - hash: %d\n", idEnt, SDBMHash(idEnt)%ENTITY_HASHTABLE_DIMENSION);
 
     deleteEntityHashTable(idEnt);
 
@@ -326,6 +366,7 @@ void delent(){
 }
 
 void delrel(){
+    /*
     printf("comand: delrel\n");
 
     scanf("%s", &idOrig);
@@ -334,6 +375,7 @@ void delrel(){
     printf("idDest: %s\n", idDest);
     scanf("%s", &idRel);
     printf("idRel: %s\n", idRel);
+     */
 
     //O(1):     cerca se le entities esistono nell'hash table, se non esistono non fa nulla
     //O(log k): dalla entity origin accede all'albero 1 delle relation tracker e cerca la relation da eliminare, se non esiste non fa nulla
@@ -352,20 +394,21 @@ void report(){
     int numberOfEntityPrinted = 0;
     for (int i = 0; i < ENTITY_HASHTABLE_DIMENSION ; ++i) {
         if(entityHashTable[i].hashChain != NULL){
-            printf("[%d]\t -> %s", i, entityHashTable[i].hashChain->entity->name);
+            printf("[%d] \t -> %s", i, entityHashTable[i].hashChain->entity->name);
             numberOfEntityPrinted++;
-            struct hashChain * temp = entityHashTable[i].hashChain->nextHashChain;
+            struct hashChain * temp = (*entityHashTable[i].hashChain).nextHashChain;
             while(temp != NULL){
                 printf(" -> %s", temp->entity->name);
                 numberOfEntityPrinted++;
+                temp = temp->nextHashChain;
             }
             printf("\n");
         }
     }
 
-    printf("hash table dimension: %d", ENTITY_HASHTABLE_DIMENSION);
-    printf("amount of entity stored in the hash table: %d", numberOfEntityInHashTable);
-    printf("amount of entity printed: %d", numberOfEntityPrinted );
+    printf("hash table dimension: %d\n", ENTITY_HASHTABLE_DIMENSION);
+    printf("amount of entity stored in the hash table: %d\n", numberOfEntityInHashTable);
+    printf("amount of entity printed: %d\n", numberOfEntityPrinted );
     //O(k):  itera in ogni relation e stampa il primo blocco
     //
     //TOTAL: O(k)
