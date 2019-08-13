@@ -8,7 +8,7 @@
 #define RED 1
 #define BLACK 0
 
-#define STRING_DIMENSION 100
+#define STRING_DIMENSION 400
 #define ENTITY_HASHTABLE_DIMENSION 30
 
 typedef enum { false, true } bool;
@@ -265,36 +265,31 @@ int main(void) {
         entityHashTable[i].hashChain = NULL;
     }
 
-    char input[10];
+    char input[STRING_DIMENSION];
     while(true){
         scanf("%s", &input);
-
-        if(input[0] == 'a'){
-            if(input[3] == 'e'){
-                //addent
-                addent();
-            }
-            else{
-                //addrel
-                addrel();
-            }
+        if(strcmp(input, "addent") == 0){
+            printf("\ncommand: addent *******************************\n");
+            addent();
         }
-        else if(input[0] == 'd'){
-            if(input[3] == 'e'){
-                //delent
-                delent();
-            }
-            else{
-                //delrel
-                delrel();
-            }
+        else if(strcmp(input, "addrel") == 0){
+            printf("\ncommand: addrel *******************************\n");
+            addrel();
         }
-        else if(input[0] == 'r'){
-            //report
+        else if(strcmp(input, "delent") == 0){
+            printf("\ncommand: delent *******************************\n");
+            delent();
+        }
+        else if(strcmp(input, "delrel") == 0){
+            printf("\ncommand: delrel *******************************\n");
+            delrel();
+        }
+        else if(strcmp(input, "report") == 0){
+            printf("\ncommand: report *******************************\n");
             report();
         }
-        else{
-            //end
+        else { //end
+            printf("\ncommand: END *******************************\n");
             report();
             return 0;
         }
@@ -302,8 +297,6 @@ int main(void) {
 }
 
 void addent(){
-    printf("command: addent\n");
-
     scanf("%s", &idEnt);
     printf("idEnt: %s - hash: %d\n", idEnt, SDBMHash(idEnt)%ENTITY_HASHTABLE_DIMENSION);
 
@@ -313,11 +306,10 @@ void addent(){
 
     insertEntityHashTable(idEnt);
 
+    return;
 }
 
 void addrel(){
-    /*
-    printf("comand: addrel\n");
 
     scanf("%s", &idOrig);
     printf("idOrig: %s\n", idOrig);
@@ -325,7 +317,9 @@ void addrel(){
     printf("idDest: %s\n", idDest);
     scanf("%s", &idRel);
     printf("idRel: %s\n", idRel);
-    */
+
+
+    return;
 
     //O(1) + O(1):         cerca se le entity origin e receiver esistono nell'hash table delle entities,
     //                     se almeno una non esiste non fa nulla
@@ -349,6 +343,7 @@ void delent(){
 
     deleteEntityHashTable(idEnt);
 
+    return;
     //O(1):                 cerca se la entity esiste nell'hash table delle entities, se non esiste non fa nulla
     //O(k):                 una volta trovata accede all'albero 1 delle relation tracker e per ognuna di queste:
     //O(n):                          accede all'albero delle entity sent to e per ognuna di queste:
@@ -366,16 +361,14 @@ void delent(){
 }
 
 void delrel(){
-    /*
-    printf("comand: delrel\n");
-
     scanf("%s", &idOrig);
     printf("idOrig: %s\n", idOrig);
     scanf("%s", &idDest);
     printf("idDest: %s\n", idDest);
     scanf("%s", &idRel);
     printf("idRel: %s\n", idRel);
-     */
+
+    return;
 
     //O(1):     cerca se le entities esistono nell'hash table, se non esistono non fa nulla
     //O(log k): dalla entity origin accede all'albero 1 delle relation tracker e cerca la relation da eliminare, se non esiste non fa nulla
@@ -409,6 +402,8 @@ void report(){
     printf("hash table dimension: %d\n", ENTITY_HASHTABLE_DIMENSION);
     printf("amount of entity stored in the hash table: %d\n", numberOfEntityInHashTable);
     printf("amount of entity printed: %d\n", numberOfEntityPrinted );
+
+    return;
     //O(k):  itera in ogni relation e stampa il primo blocco
     //
     //TOTAL: O(k)
