@@ -1064,8 +1064,8 @@ void deleteRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * z,
         y->father->right = x;
     }
     if (y != z){
-        //copia dati di y in z
-        //TODO
+        z->externalRelationTracker = y->externalRelationTracker;
+        z->internalEntity = y->internalEntity;
     }
     if(y->nodeColor == BLACK){
         deleteRelationSentToOrReceivedFrom_FIXUP(x, head);
