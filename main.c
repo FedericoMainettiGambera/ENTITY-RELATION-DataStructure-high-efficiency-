@@ -1258,6 +1258,27 @@ void addrel(){
         printf("added relationTracker about %s to entity %s\n", idRel, idDest);
     }
 
+    struct relationSentToOrReceivedFrom * relationSentTo = malloc(sizeof(struct relationSentToOrReceivedFrom));
+    relationSentTo->internalEntity = entityOrig;
+    relationSentTo->externalRelationTracker = relTrackerDest;
+    relationSentTo->left = &nullRelationSentToOrReceivedFromNode;
+    relationSentTo->right = &nullRelationSentToOrReceivedFromNode;
+    relationSentTo->father = &nullRelationSentToOrReceivedFromNode;
+    relationSentTo->nodeColor = BLACK;
+    insertRelationSentToOrReceivedFrom(relationSentTo,&relTrackerOrig->sentToTreeHead);
+    printf("added relationSentTo to the orig (%s)\n", idOrig);
+
+    struct relationSentToOrReceivedFrom * relationReceivedFrom = malloc(sizeof(struct relationSentToOrReceivedFrom));
+    relationReceivedFrom->internalEntity = entityDest;
+    relationReceivedFrom->externalRelationTracker = relTrackerOrig;
+    relationReceivedFrom->left = &nullRelationSentToOrReceivedFromNode;
+    relationReceivedFrom->right = &nullRelationSentToOrReceivedFromNode;
+    relationReceivedFrom->father = &nullRelationSentToOrReceivedFromNode;
+    relationReceivedFrom->nodeColor = BLACK;
+    relTrackerDest->numberOfRelationReceived++;
+    //todo fix the ALBERO 2 relative to the relTrackerDest
+    insertRelationSentToOrReceivedFrom(relationReceivedFrom,&relTrackerDest->receivedFromTreeHead);
+    printf("added relationSentTo to the dest (%s)\n", idDest);
 
     //O(1) + O(1):         cerca se le entity origin e receiver esistono nell'hash table delle entities,
     //                     se almeno una non esiste non fa nulla
