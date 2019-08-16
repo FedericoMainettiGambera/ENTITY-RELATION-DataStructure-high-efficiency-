@@ -139,14 +139,14 @@ void deleteRelationTracker_1(struct entity * entity, struct relationTracker_1 * 
 void deleteRelationTracker_1_FIXUP(struct entity * entity, struct relationTracker_1 * node);
 
 
-void leftRotateRelationTracker_2(struct relationTracker_2 * originNode, struct relation * relation);
-void rightRotateRelationTracker_2(struct relationTracker_2 * originNode, struct relation * relation);
-void insertRelationTracker_2(struct relation * relation, struct relationTracker_2 * newNode);
+void leftRotateRelationTracker_2(struct relationTracker_2 * x, struct relation * relation);
+void rightRotateRelationTracker_2(struct relationTracker_2 * x, struct relation * relation);
+void insertRelationTracker_2(struct relation * relation, struct relationTracker_2 * z);
 void insertRelationTracker_2_FIXUP(struct relation * relation, struct relationTracker_2 * newNode);
-struct relationTracker_2 * minimumRelationTracker_2(struct relationTracker_2 * node);
-struct relationTracker_2 * successorRelationTracker_2(struct relationTracker_2 * node);
-void deleteRelationTracker_2(struct relation * relation, struct relationTracker_2 * node);
-void deleteRelationTracker_2_FIXUP(struct relation * relation, struct relationTracker_2 * node);
+struct relationTracker_2 * minimumRelationTracker_2(struct relationTracker_2 * x);
+struct relationTracker_2 * successorRelationTracker_2(struct relationTracker_2 * x);
+void deleteRelationTracker_2(struct relation * relation, struct relationTracker_2 * z);
+void deleteRelationTracker_2_FIXUP(struct relation * relation, struct relationTracker_2 * x);
 
 
 struct relation * searchRelation(char * idRelSearched);
@@ -852,159 +852,162 @@ void deleteRelationTracker_1_FIXUP(struct entity * entity, struct relationTracke
 
 //ALBERO 2
 
-void leftRotateRelationTracker_2(struct relationTracker_2 * originNode, struct relation * relation){
-    struct relationTracker_2 * temp = originNode->rightNodeRelationTree;
-    originNode->rightNodeRelationTree = temp->leftNodeRelationTree;
+void leftRotateRelationTracker_2(struct relationTracker_2 * x, struct relation * relation){
+    struct relationTracker_2 * y = x->rightNodeRelationTree;
+    x->rightNodeRelationTree = y->leftNodeRelationTree;
 
-    if(temp->leftNodeRelationTree != &nullRelationTrackerNode_2){
-        temp->leftNodeRelationTree->fatherRelationTree = originNode;
+    if(y->leftNodeRelationTree != &nullRelationTrackerNode_2){
+        y->leftNodeRelationTree->fatherRelationTree = x;
     }
-    temp->fatherRelationTree = originNode->fatherRelationTree;
+    y->fatherRelationTree = x->fatherRelationTree;
 
-    if(originNode->fatherRelationTree == &nullRelationTrackerNode_2){
-        relation->relationTrackerTreeHead = temp;
+    if(x->fatherRelationTree == &nullRelationTrackerNode_2){
+        relation->relationTrackerTreeHead = y;
     }
-    else if(originNode == originNode->fatherRelationTree->leftNodeRelationTree){
-        originNode->fatherRelationTree->leftNodeRelationTree = temp;
+    else if(x == x->fatherRelationTree->leftNodeRelationTree){
+        x->fatherRelationTree->leftNodeRelationTree = y;
     }
     else{
-        originNode->fatherRelationTree->rightNodeRelationTree = temp;
+        x->fatherRelationTree->rightNodeRelationTree = y;
     }
-    temp->leftNodeRelationTree = originNode;
-    originNode->fatherRelationTree = temp;
+    y->leftNodeRelationTree = x;
+    x->fatherRelationTree = y;
 }
 
-void rightRotateRelationTracker_2(struct relationTracker_2 * originNode, struct relation * relation){
-    struct relationTracker_2 * temp = originNode->leftNodeRelationTree;
-    originNode->leftNodeRelationTree = temp->rightNodeRelationTree;
+void rightRotateRelationTracker_2(struct relationTracker_2 * x, struct relation * relation){
+    struct relationTracker_2 * y = x->leftNodeRelationTree;
+    x->leftNodeRelationTree = y->rightNodeRelationTree;
 
-    if(temp->rightNodeRelationTree != &nullRelationTrackerNode_2){
-        temp->rightNodeRelationTree->fatherRelationTree = originNode;
+    if(y->rightNodeRelationTree != &nullRelationTrackerNode_2){
+        y->rightNodeRelationTree->fatherRelationTree = x;
     }
-    temp->fatherRelationTree = originNode->fatherRelationTree;
+    y->fatherRelationTree = x->fatherRelationTree;
 
-    if(originNode->fatherRelationTree == &nullRelationTrackerNode_2){
-        relation->relationTrackerTreeHead = temp;
+    if(x->fatherRelationTree == &nullRelationTrackerNode_2){
+        relation->relationTrackerTreeHead = y;
     }
-    else if(originNode == originNode->fatherRelationTree->rightNodeRelationTree){
-        originNode->fatherRelationTree->rightNodeRelationTree = temp;
+    else if(x == x->fatherRelationTree->rightNodeRelationTree){
+        x->fatherRelationTree->rightNodeRelationTree = y;
     }
     else{
-        originNode->fatherRelationTree->leftNodeRelationTree = temp;
+        x->fatherRelationTree->leftNodeRelationTree = y;
     }
-    temp->rightNodeRelationTree = originNode;
-    originNode->fatherRelationTree = temp;
+    y->rightNodeRelationTree = x;
+    x->fatherRelationTree = y;
 }
 
-void insertRelationTracker_2(struct relation * relation, struct relationTracker_2 * newNode) {
-    struct relationTracker_2 * tempFather = &nullRelationTrackerNode_2;
-    struct relationTracker_2 * tempNewNode = relation->relationTrackerTreeHead;
-    while(tempNewNode != &nullRelationTrackerNode_2){
-        tempFather = tempNewNode;
-        //todo the comparison should also order the nodes based on the entity's names
-        if(newNode->relationTracker_1->numberOfRelationReceived < tempNewNode->relationTracker_1->numberOfRelationReceived){
-            tempNewNode = tempNewNode->leftNodeRelationTree;
+void insertRelationTracker_2(struct relation * relation, struct relationTracker_2 * z) {
+    struct relationTracker_2 * y = &nullRelationTrackerNode_2;
+    struct relationTracker_2 * x = relation->relationTrackerTreeHead;
+
+    int i = 0;
+    while(x != &nullRelationTrackerNode_2){
+        i++;
+        y = x;
+
+        //TODO should also order based on entity name if the numberOfRelationReceived is euqal
+        if(z->relationTracker_1->numberOfRelationReceived < x->relationTracker_1->numberOfRelationReceived){
+            x = x->leftNodeRelationTree;
         }
         else{
-            tempNewNode = tempNewNode->rightNodeRelationTree;
+            x = x->rightNodeRelationTree;
         }
     }
-    newNode->fatherRelationTree = tempFather;
-    if(tempFather == &nullRelationTrackerNode_2){
-        relation->relationTrackerTreeHead = newNode;
+    z->fatherRelationTree = y;
+    if(y == &nullRelationTrackerNode_2){
+        relation->relationTrackerTreeHead = z;
     }
-    else if(newNode->relationTracker_1->numberOfRelationReceived < tempFather->relationTracker_1->numberOfRelationReceived){
-        tempFather->leftNodeRelationTree = newNode;
+    else if(z->relationTracker_1->numberOfRelationReceived < y->relationTracker_1->numberOfRelationReceived){
+        y->leftNodeRelationTree = z;
     }
     else{
-        tempFather->rightNodeRelationTree = newNode;
+        y->rightNodeRelationTree = z;
     }
-    newNode->leftNodeRelationTree = &nullRelationTrackerNode_2;
-    newNode->rightNodeRelationTree = &nullRelationTrackerNode_2;
-    newNode->nodeColorRelationTree = RED;
-    insertRelationTracker_2_FIXUP(relation, newNode);
+    z->leftNodeRelationTree = &nullRelationTrackerNode_2;
+    z->rightNodeRelationTree = &nullRelationTrackerNode_2;
+    z->nodeColorRelationTree = RED;
+    insertRelationTracker_2_FIXUP(relation, z);
 }
 
 void insertRelationTracker_2_FIXUP(struct relation * relation, struct relationTracker_2 * newNode){
-    struct relationTracker_2 * tempFather;
-    struct relationTracker_2 * tempNewNode;
+    struct relationTracker_2 * x;
+    struct relationTracker_2 * y;
     if(newNode == relation->relationTrackerTreeHead){
         newNode->nodeColorRelationTree = BLACK;
     }
     else{
-        tempNewNode = newNode->fatherRelationTree;
-        if(newNode->nodeColorRelationTree == RED){
-            if(newNode == newNode->fatherRelationTree->leftNodeRelationTree){
-                tempFather = newNode->fatherRelationTree->rightNodeRelationTree;
-                if(tempFather->nodeColorRelationTree == RED){
-                    tempNewNode->nodeColorRelationTree= BLACK;
-                    tempFather->nodeColorRelationTree = BLACK;
-                    tempNewNode->fatherRelationTree->nodeColorRelationTree = RED;
-                    insertRelationTracker_2_FIXUP(relation, tempNewNode->fatherRelationTree);
+        x = newNode->fatherRelationTree;
+        if(x->nodeColorRelationTree == RED){
+            if(x == x->fatherRelationTree->leftNodeRelationTree){
+                y = x->fatherRelationTree->rightNodeRelationTree;
+                if(y->nodeColorRelationTree == RED){
+                    x->nodeColorRelationTree= BLACK;
+                    y->nodeColorRelationTree = BLACK;
+                    x->fatherRelationTree->nodeColorRelationTree = RED;
+                    insertRelationTracker_2_FIXUP(relation, x->fatherRelationTree);
                 }
                 else{
-                    if(newNode == tempNewNode->rightNodeRelationTree) {
-                        newNode = tempNewNode;
+                    if(newNode == x->rightNodeRelationTree) {
+                        newNode = x;
                         leftRotateRelationTracker_2(newNode, relation);
-                        tempNewNode = newNode->fatherRelationTree;
+                        x = newNode->fatherRelationTree;
                     }
-                    tempNewNode->nodeColorRelationTree = BLACK;
-                    tempNewNode->fatherRelationTree->nodeColorRelationTree = RED;
-                    rightRotateRelationTracker_2(tempNewNode->fatherRelationTree,relation);
+                    x->nodeColorRelationTree = BLACK;
+                    x->fatherRelationTree->nodeColorRelationTree = RED;
+                    rightRotateRelationTracker_2(x->fatherRelationTree,relation);
                 }
             }
             else{
-                tempFather = newNode->fatherRelationTree->leftNodeRelationTree;
-                if(tempFather->nodeColorRelationTree == RED){
-                    tempNewNode->nodeColorRelationTree = BLACK;
-                    tempFather->nodeColorRelationTree = BLACK;
-                    tempNewNode->fatherRelationTree->nodeColorRelationTree = RED;
-                    insertRelationTracker_2_FIXUP(relation, tempNewNode->fatherRelationTree);
+                y = x->fatherRelationTree->leftNodeRelationTree;
+                if(y->nodeColorRelationTree == RED){
+                    x->nodeColorRelationTree= BLACK;
+                    y->nodeColorRelationTree = BLACK;
+                    x->fatherRelationTree->nodeColorRelationTree = RED;
+                    insertRelationTracker_2_FIXUP(relation, x->fatherRelationTree);
                 }
                 else{
-                    if(newNode == tempNewNode->leftNodeRelationTree) {
-                        newNode = tempNewNode;
+                    if(newNode == x->leftNodeRelationTree) {
+                        newNode = x;
                         rightRotateRelationTracker_2(newNode, relation);
-                        tempNewNode = newNode->fatherRelationTree;
+                        x = newNode->fatherRelationTree;
                     }
-                    tempNewNode->nodeColorRelationTree = BLACK;
-                    tempNewNode->fatherRelationTree->nodeColorRelationTree = RED;
-                    leftRotateRelationTracker_2(tempNewNode->fatherRelationTree,relation);
+                    x->nodeColorRelationTree = BLACK;
+                    x->fatherRelationTree->nodeColorRelationTree = RED;
+                    leftRotateRelationTracker_2(x->fatherRelationTree,relation);
                 }
             }
         }
     }
 }
 
-struct relationTracker_2 * minimumRelationTracker_2(struct relationTracker_2 * node){
-    while(node->leftNodeRelationTree != &nullRelationTrackerNode_2){
-        node = node->leftNodeRelationTree;
+struct relationTracker_2 * minimumRelationTracker_2(struct relationTracker_2 * x){
+    while(x->leftNodeRelationTree != &nullRelationTrackerNode_2){
+        x = x->leftNodeRelationTree;
     }
-    return  node;
+    return x;
 }
 
-struct relationTracker_2 * successorRelationTracker_2(struct relationTracker_2 * node){
-    struct relationTracker_2 * temp;
-    if(node->rightNodeRelationTree != &nullRelationTrackerNode_2){
-        return minimumRelationTracker_2(node->rightNodeRelationTree);
-    }
-    temp = node->fatherRelationTree;
-    while((temp != &nullRelationTrackerNode_2) && (node == temp->rightNodeRelationTree)){
-        node = temp;
-        temp = temp->fatherRelationTree;
-    }
-    return temp;
-}
-
-void deleteRelationTracker_2(struct relation * relation, struct relationTracker_2 * node){
-    struct relationTracker_2 * x;
+struct relationTracker_2 * successorRelationTracker_2(struct relationTracker_2 * x){
     struct relationTracker_2 * y;
+    if(x->rightNodeRelationTree != &nullRelationTrackerNode_2){
+        return minimumRelationTracker_2(x->rightNodeRelationTree);
+    }
+    y = x->fatherRelationTree;
+    while((y != &nullRelationTrackerNode_2) && (x == y->rightNodeRelationTree)){
+        x = y;
+        y = y->fatherRelationTree;
+    }
+    return y;
+}
 
-    if((node->leftNodeRelationTree == &nullRelationTrackerNode_2) || (node->rightNodeRelationTree == &nullRelationTrackerNode_2)){
-        y = node;
+void deleteRelationTracker_2(struct relation * relation, struct relationTracker_2 * z) {
+    struct relationTracker_2 *x;
+    struct relationTracker_2 *y;
+    if(z->leftNodeRelationTree == &nullRelationTrackerNode_2 || z->rightNodeRelationTree == &nullRelationTrackerNode_2){
+        y = z;
     }
     else{
-        y = successorRelationTracker_2(node);
+        y = successorRelationTracker_2(z);
     }
     if(y->leftNodeRelationTree != &nullRelationTrackerNode_2){
         x = y->leftNodeRelationTree;
@@ -1022,67 +1025,68 @@ void deleteRelationTracker_2(struct relation * relation, struct relationTracker_
     else{
         y->fatherRelationTree->rightNodeRelationTree = x;
     }
-    if( y != node){
-        node->relationTracker_1 = y->relationTracker_1; //TODO CHECK
+    if(y != z){
+        z->relationTracker_1 = y->relationTracker_1;
+        z->relationTracker_1->relationTracker_2 = z;
     }
     if(y->nodeColorRelationTree == BLACK){
         deleteRelationTracker_2_FIXUP(relation, x);
     }
 }
 
-void deleteRelationTracker_2_FIXUP(struct relation * relation, struct relationTracker_2 * node){
-    struct relationTracker_2 * temp;
-    if(node->nodeColorRelationTree == RED || node->fatherRelationTree == &nullRelationTrackerNode_2){
-        node->nodeColorRelationTree = BLACK;
+void deleteRelationTracker_2_FIXUP(struct relation * relation, struct relationTracker_2 * x){
+    struct relationTracker_2 * w;
+    if(x->nodeColorRelationTree == RED || x->fatherRelationTree == &nullRelationTrackerNode_2){
+        x->nodeColorRelationTree = BLACK;
     }
-    else if(node == node->fatherRelationTree->leftNodeRelationTree){
-        temp = node->fatherRelationTree->rightNodeRelationTree;
-        if(temp->nodeColorRelationTree == RED){
-            temp->nodeColorRelationTree = BLACK;
-            node->fatherRelationTree->nodeColorRelationTree = RED;
-            leftRotateRelationTracker_2(node->fatherRelationTree,relation);
-            temp = node->fatherRelationTree->rightNodeRelationTree;
+    else if(x == x->fatherRelationTree->leftNodeRelationTree){
+        w = x->fatherRelationTree->rightNodeRelationTree;
+        if(w->nodeColorRelationTree == RED){
+            w->nodeColorRelationTree = BLACK;
+            x->fatherRelationTree->nodeColorRelationTree = RED;
+            leftRotateRelationTracker_2(x->fatherRelationTree, relation);
+            w = x->fatherRelationTree->rightNodeRelationTree;
         }
-        if((temp->nodeColorRelationTree == BLACK) && (temp->rightNodeRelationTree->nodeColorRelationTree == BLACK)){
-            temp->nodeColorRelationTree = RED;
-            deleteRelationTracker_2_FIXUP(relation, node->fatherRelationTree);
+        if(w->leftNodeRelationTree->nodeColorRelationTree == BLACK && w->rightNodeRelationTree->nodeColorRelationTree == BLACK){
+            w->nodeColorRelationTree = RED;
+            deleteRelationTracker_2_FIXUP(relation,x->fatherRelationTree);
         }
         else{
-            if(temp->rightNodeRelationTree->nodeColorRelationTree == BLACK){
-                temp->leftNodeRelationTree->nodeColorRelationTree = BLACK;
-                temp->nodeColorRelationTree = RED;
-                rightRotateRelationTracker_2(temp, relation);
-                temp = node->fatherRelationTree->rightNodeRelationTree;
+            if(w->rightNodeRelationTree->nodeColorRelationTree == BLACK){
+                w->leftNodeRelationTree->nodeColorRelationTree  = BLACK;
+                w->nodeColorRelationTree = RED;
+                rightRotateRelationTracker_2(w, relation);
+                w = x->fatherRelationTree->rightNodeRelationTree;
             }
-            temp->nodeColorRelationTree = node->fatherRelationTree->nodeColorRelationTree;
-            node->fatherRelationTree->nodeColorRelationTree = BLACK;
-            temp->rightNodeRelationTree->nodeColorRelationTree = BLACK;
-            leftRotateRelationTracker_2(node->fatherRelationTree, relation);
+            w->nodeColorRelationTree = x->fatherRelationTree->nodeColorRelationTree;
+            w->fatherRelationTree->nodeColorRelationTree = BLACK;
+            w->rightNodeRelationTree->nodeColorRelationTree = BLACK;
+            leftRotateRelationTracker_2(x->fatherRelationTree, relation);
         }
     }
     else{
-        temp = node->fatherRelationTree->leftNodeRelationTree;
-        if(temp->nodeColorRelationTree == RED){
-            temp->nodeColorRelationTree = BLACK;
-            node->fatherRelationTree->nodeColorRelationTree = RED;
-            rightRotateRelationTracker_2(node->fatherRelationTree, relation);
-            temp = node->fatherRelationTree->leftNodeRelationTree;
+        w = x->fatherRelationTree->leftNodeRelationTree;
+        if(w->nodeColorRelationTree == RED){
+            w->nodeColorRelationTree = BLACK;
+            x->fatherRelationTree->nodeColorRelationTree = RED;
+            rightRotateRelationTracker_2(x->fatherRelationTree, relation);
+            w = x->fatherRelationTree->leftNodeRelationTree;
         }
-        if((temp->nodeColorRelationTree == BLACK) && (temp->leftNodeRelationTree->nodeColorRelationTree == BLACK)){
-            temp->nodeColorRelationTree= RED;
-            deleteRelationTracker_2_FIXUP(relation, node->fatherRelationTree);
+        if(w->rightNodeRelationTree->nodeColorRelationTree == BLACK && w->leftNodeRelationTree->nodeColorRelationTree == BLACK){
+            w->nodeColorRelationTree = RED;
+            deleteRelationTracker_2_FIXUP(relation,x->fatherRelationTree);
         }
         else{
-            if(temp->leftNodeRelationTree->nodeColorRelationTree == BLACK){
-                temp->rightNodeRelationTree->nodeColorRelationTree = BLACK;
-                temp->nodeColorRelationTree = RED;
-                leftRotateRelationTracker_2(temp, relation);
-                temp = node->fatherRelationTree->leftNodeRelationTree;
+            if(w->leftNodeRelationTree->nodeColorRelationTree == BLACK){
+                w->rightNodeRelationTree->nodeColorRelationTree  = BLACK;
+                w->nodeColorRelationTree = RED;
+                leftRotateRelationTracker_2(w, relation);
+                w = x->fatherRelationTree->leftNodeRelationTree;
             }
-            temp->nodeColorRelationTree = node->fatherRelationTree->nodeColorRelationTree;
-            node->fatherRelationTree->nodeColorRelationTree = BLACK;
-            temp->leftNodeRelationTree->nodeColorRelationTree = BLACK;
-            rightRotateRelationTracker_2(node->fatherRelationTree, relation);
+            w->nodeColorRelationTree = x->fatherRelationTree->nodeColorRelationTree;
+            w->fatherRelationTree->nodeColorRelationTree = BLACK;
+            w->leftNodeRelationTree->nodeColorRelationTree = BLACK;
+            rightRotateRelationTracker_2(x->fatherRelationTree, relation);
         }
     }
 }
@@ -1115,7 +1119,6 @@ struct relationSentToOrReceivedFrom * searchRelationSentToOrReceivedFrom(char * 
             result = result->right;
         }
     }
-    printf("couldn't find the relationSentToOrReceivedFrom riferred to entity %s\n", id);
     return result;
 }
 
@@ -1392,6 +1395,7 @@ int main(void) {
         }
         else { //end
             printf("******************* END **********************************************\n");
+            printf("ending line input was: %s\n", input);
             report();
             printf("**********************************************************************\n\n");
 
@@ -1412,9 +1416,6 @@ void addent(){
 }
 
 void addrel(){
-    //todo should not add duplicated relation
-    //  eg: addrel fede cane gioca -> aggiunge la relazione
-    //      addrel fede cane gioca -> non aggiunge una relazione
 
     scanf("%s", idOrig);
     printf("idOrig: %s\n", idOrig);
@@ -1474,7 +1475,7 @@ void addrel(){
     struct relationTracker_1 *relTrackerDest;
     if(entityDest == entityOrig){
         relTrackerDest = relTrackerOrig;
-        printf("entity orig and dest is the same (%s)", idOrig);
+        printf("entity orig and dest is the same (%s)\n", idOrig);
     }
     else {
         relTrackerDest = searchRelationTracker_1(idRel, entityDest);
@@ -1500,28 +1501,48 @@ void addrel(){
         }
     }
 
-    struct relationSentToOrReceivedFrom *relationSentTo = malloc(sizeof(struct relationSentToOrReceivedFrom));
-    relationSentTo->internalEntity = entityOrig;
-    relationSentTo->externalRelationTracker = relTrackerDest;
-    relationSentTo->left = &nullRelationSentToOrReceivedFromNode;
-    relationSentTo->right = &nullRelationSentToOrReceivedFromNode;
-    relationSentTo->father = &nullRelationSentToOrReceivedFromNode;
-    relationSentTo->nodeColor = BLACK;
+    struct relationSentToOrReceivedFrom *relationSentTo = searchRelationSentToOrReceivedFrom(entityDest->name, &(relTrackerOrig->sentToTreeHead));
+    if(relationSentTo == &nullRelationSentToOrReceivedFromNode) {
+        printf("creating new relationSentTo\n");
+        relationSentTo = malloc(sizeof(struct relationSentToOrReceivedFrom));
+        relationSentTo->internalEntity = entityOrig;
+        relationSentTo->externalRelationTracker = relTrackerDest;
+        relationSentTo->left = &nullRelationSentToOrReceivedFromNode;
+        relationSentTo->right = &nullRelationSentToOrReceivedFromNode;
+        relationSentTo->father = &nullRelationSentToOrReceivedFromNode;
+    }
+    else{
+        printf("relation already exists\n");
+        return;
+    }
     insertRelationSentToOrReceivedFrom(relationSentTo, &(relTrackerOrig->sentToTreeHead));
     printf("added relationSentTo to the orig (%s)\n", idOrig);
 
-    struct relationSentToOrReceivedFrom *relationReceivedFrom = malloc(sizeof(struct relationSentToOrReceivedFrom));
-    relationReceivedFrom->internalEntity = entityDest;
-    relationReceivedFrom->externalRelationTracker = relTrackerOrig;
-    relationReceivedFrom->left = &nullRelationSentToOrReceivedFromNode;
-    relationReceivedFrom->right = &nullRelationSentToOrReceivedFromNode;
-    relationReceivedFrom->father = &nullRelationSentToOrReceivedFromNode;
-    relationReceivedFrom->nodeColor = BLACK;
+    struct relationSentToOrReceivedFrom *relationReceivedFrom = searchRelationSentToOrReceivedFrom(entityOrig->name, &(relTrackerDest->receivedFromTreeHead));
+    if(relationReceivedFrom == &nullRelationSentToOrReceivedFromNode) {
+        printf("creating new relationSentTo\n");
+        relationReceivedFrom = malloc(sizeof(struct relationSentToOrReceivedFrom));
+        relationReceivedFrom->internalEntity = entityDest;
+        relationReceivedFrom->externalRelationTracker = relTrackerOrig;
+        relationReceivedFrom->left = &nullRelationSentToOrReceivedFromNode;
+        relationReceivedFrom->right = &nullRelationSentToOrReceivedFromNode;
+        relationReceivedFrom->father = &nullRelationSentToOrReceivedFromNode;
+    }
+    else{
+        printf("relation already exists\n");
+        return;
+    }
+
     insertRelationSentToOrReceivedFrom(relationReceivedFrom, &(relTrackerDest->receivedFromTreeHead));
     printf("added relationReceivedFrom to the dest (%s)\n", idDest);
 
     deleteRelationTracker_2(relation, relTrackerDest->relationTracker_2);
     relTrackerDest->numberOfRelationReceived++;
+    relTrackerDest->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
+    relTrackerDest->relationTracker_2->relationTracker_1 = relTrackerDest;
+    relTrackerDest->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
+    relTrackerDest->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
+    relTrackerDest->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
     insertRelationTracker_2(relation, relTrackerDest->relationTracker_2);
     printf("incremented numberOfRelationReceived of relation %s of entity dest %s\n", idRel, idDest);
 
@@ -1605,6 +1626,8 @@ void delrel(){
     // j= dimensione dell'albero 2 di relation tracker della relation considerata
 }
 
+int numberOfRelationReceivedPrinted_1 = 0;
+int numberOfRelationReceivedPrinted_2 = 0;
 void printAllRelationSentToRecursive(struct relationSentToOrReceivedFrom * x);
 void printALlRelationReceivedFromRecursive(struct relationSentToOrReceivedFrom * x);
 void printAllRelationRecursive(struct relation * x);
@@ -1621,6 +1644,7 @@ void printALlRelationReceivedFromRecursive(struct relationSentToOrReceivedFrom *
     if(x != &nullRelationSentToOrReceivedFromNode){
         printALlRelationReceivedFromRecursive(x->left);
         printf("\t\t\t%s<-%s\n", x->internalEntity->name, x->externalRelationTracker->entity->name);
+        numberOfRelationReceivedPrinted_1++;
         printALlRelationReceivedFromRecursive(x->right);
     }
 }
@@ -1637,6 +1661,7 @@ void printAllRelationTrackerRecursive_2(struct relationTracker_2 * x){
     if(x!= &nullRelationTrackerNode_2){
         printAllRelationTrackerRecursive_2(x->leftNodeRelationTree);
         printf("\t\t%s has received %d\n", x->relationTracker_1->entity->name, x->relationTracker_1->numberOfRelationReceived);
+        numberOfRelationReceivedPrinted_2 += x->relationTracker_1->numberOfRelationReceived;
         printAllRelationTrackerRecursive_2(x->rightNodeRelationTree);
     }
 }
@@ -1650,7 +1675,8 @@ void printAllRelationRecursive(struct relation * x){
 }
 void report(){
     int numberOfEntityPrinted = 0;
-
+    numberOfRelationReceivedPrinted_1 = 0;
+    numberOfRelationReceivedPrinted_2 = 0;
     for (int i = 0; i < ENTITY_HASHTABLE_DIMENSION ; ++i) {
         if(entityHashTable[i].hashChain != NULL){
 
@@ -1671,6 +1697,7 @@ void report(){
         }
     }
 
+
     printf("hash table dimension: %d\n", ENTITY_HASHTABLE_DIMENSION);
     printf("amount of entity stored in the hash table: %d\n", numberOfEntityInHashTable);
     printf("amount of entity printed: %d\n", numberOfEntityPrinted );
@@ -1680,6 +1707,12 @@ void report(){
         printf("\tnone\n");
     }
     printAllRelationRecursive(relationTreeHead);
+    printf("\n");
+    printf("amount of relation received printed in ALBERO 1: %d\n", numberOfRelationReceivedPrinted_1);
+    printf("amount of relation received printed in ALBERO 2: %d\n", numberOfRelationReceivedPrinted_2);
+    if(numberOfRelationReceivedPrinted_2 != numberOfRelationReceivedPrinted_1){
+        printf("incoherence\n");
+    }
 
     //O(k):  itera in ogni relation e stampa il primo blocco
     //
