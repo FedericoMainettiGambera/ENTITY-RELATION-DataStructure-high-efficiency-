@@ -1842,15 +1842,3 @@ void report(){
     //TOTAL: O(k)
     // k= numero totale di tipi di relazioni esistenti
 }
-
-
-
-"fights" | relation received: 0
-    "Kantrofarri"->"Bill_Potts"
-    "Kantrofarri"->"River_Song"
-    "Kantrofarri"->"Rose_Tyler"
-"kills" | relation received: 4
-    "Kantrofarri"<-"Mickey_Smith"
-    "Kantrofarri"<-"River_Song"
-    "Kantrofarri"<-"Rory_Williams"
-    "Kantrofarri"<-"Rose_Tyler"
