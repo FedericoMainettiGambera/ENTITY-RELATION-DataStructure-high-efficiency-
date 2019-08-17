@@ -913,7 +913,16 @@ void insertRelationTracker_2(struct relation * relation, struct relationTracker_
         i++;
         y = x;
 
-        //TODO should also order based on entity name if the numberOfRelationReceived is euqal
+        /*todo, non so perchè ma se li ordino alfabeticamente non funziona più
+        if(z->relationTracker_1->numberOfRelationReceived == x->relationTracker_1->numberOfRelationReceived){
+            if(strcmp(z->relationTracker_1->entity->name,x->relationTracker_1->entity->name) < 0){
+                x = x->rightNodeRelationTree;
+            }
+            else{
+                x = x->leftNodeRelationTree;
+            }
+        }
+        else */
         if(z->relationTracker_1->numberOfRelationReceived < x->relationTracker_1->numberOfRelationReceived){
             x = x->leftNodeRelationTree;
         }
@@ -1780,6 +1789,51 @@ void printAllRelationRecursive(struct relation * x){
         printAllRelationRecursive(x->right);
     }
 }
+
+void printReportRecursive(struct relation * relation, int firstTime);
+void printReportRecursive(struct relation * relation, int firstTime){
+    if(relation != &nullRelationNode){
+
+        printReportRecursive(relation->left, 0);
+
+        if(firstTime == 0){
+            printf(" ");
+        }
+
+        struct relationTracker_2 * max = relation->relationTrackerTreeHead;
+        if(max != &nullRelationTrackerNode_2) {
+            while (max->rightNodeRelationTree != &nullRelationTrackerNode_2) {
+                max = max->rightNodeRelationTree;
+            }
+            unsigned int quantity = max->relationTracker_1->numberOfRelationReceived;
+            if (quantity != 0) {
+                printf("%s", max->relationTracker_1->relation->name);
+                printf(" ");
+
+                printf("%s", max->relationTracker_1->entity->name);
+                printf(" ");
+
+                while (max->fatherRelationTree != &nullRelationTrackerNode_2) {
+                    if (quantity == max->fatherRelationTree->relationTracker_1->numberOfRelationReceived) {
+                        max = max->fatherRelationTree;
+                    }
+                }
+
+                while (max->rightNodeRelationTree != &nullRelationTrackerNode_2) {
+                    printf("%s", max->relationTracker_1->entity->name);
+                    printf(" ");
+                    max = max->rightNodeRelationTree;
+                }
+
+                printf("%d", quantity);
+                printf(";");
+            }
+        }
+
+        printReportRecursive(relation->right, 0);
+    }
+}
+
 void report(){
     int numberOfEntityPrinted = 0;
     numberOfRelationReceivedPrinted_1 = 0;
@@ -1806,11 +1860,11 @@ void report(){
 
 
     printf("hash table dimension: %d\n", ENTITY_HASHTABLE_DIMENSION);
-    printf("amount of entity stored in the hash table: %d\n", numberOfEntityInHashTable);
-    printf("amount of entity printed: %d\n", numberOfEntityPrinted );
+    printf("amount of entities stored in the hash table: %d\n", numberOfEntityInHashTable);
+    printf("amount of entities printed: %d\n", numberOfEntityPrinted );
     printf("amount of well formed addent executed: %d\n", numberOfTotalAddent);
     printf("amount of well formed delent executed: %d\n", numberOfTotalDelent);
-    printf("amount of total current end registered: %d\n", (numberOfTotalAddent - numberOfTotalDelent));
+    printf("amount of total current entities registered: %d\n", (numberOfTotalAddent - numberOfTotalDelent));
     if(numberOfEntityInHashTable != numberOfEntityPrinted){
         printf("incoherence 0\n");
     }
@@ -1824,11 +1878,11 @@ void report(){
     }
     printAllRelationRecursive(relationTreeHead);
     printf("\n");
-    printf("amount of relation received printed in ALBERO 1: %d\n", numberOfRelationReceivedPrinted_1);
-    printf("amount of relation received printed in ALBERO 2: %d\n", numberOfRelationReceivedPrinted_2);
+    printf("amount of relations received printed in ALBERO 1: %d\n", numberOfRelationReceivedPrinted_1);
+    printf("amount of relations received printed in ALBERO 2: %d\n", numberOfRelationReceivedPrinted_2);
     printf("amount of well defined addrel executed: %d\n", numberOfTotalAddrel);
     printf("amount of well defined delrel executed: %d\n", numberOfTotalDelrel);
-    printf("amount of total current rel registered: %d\n", (numberOfTotalAddrel - numberOfTotalDelrel));
+    printf("amount of total current relations registered: %d\n", (numberOfTotalAddrel - numberOfTotalDelrel));
 
     if(numberOfRelationReceivedPrinted_2 != numberOfRelationReceivedPrinted_1){
         printf("incoherence 2\n");
@@ -1837,8 +1891,12 @@ void report(){
         printf("incoherence 3\n");
     }
 
-    //O(k):  itera in ogni relation e stampa il primo blocco
+    printReportRecursive(relationTreeHead, 1);
+
+
+    //O(k*n):  itera in ogni relation e stampa la lista di max
     //
-    //TOTAL: O(k)
+    //TOTAL: O(k*n)
     // k= numero totale di tipi di relazioni esistenti
+    // n= numero di parimerito con max numero direlazioni entranti
 }
