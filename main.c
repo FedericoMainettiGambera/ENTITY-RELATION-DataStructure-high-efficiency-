@@ -132,7 +132,7 @@ void report();
 void insertEntityHashTable(char entity[STRING_DIMENSION]);
 void deleteEntityHashTable(char entity[STRING_DIMENSION]);
 struct entity * searchEntityHashTable(char entity[STRING_DIMENSION]);
-unsigned long hashFunction(char* str);
+unsigned long hashFunction(unsigned char *str);
 
 struct relationTracker_1 *  searchRelationTracker_1(char * idRelation, struct entity * entity);
 void leftRotateRelationTracker_1(struct relationTracker_1 * originNode, struct entity * entity);
@@ -153,7 +153,6 @@ struct relationTracker_2 * minimumRelationTracker_2(struct relationTracker_2 * x
 struct relationTracker_2 * successorRelationTracker_2(struct relationTracker_2 * x);
 void deleteRelationTracker_2(struct relation * relation, struct relationTracker_2 * z);
 void deleteRelationTracker_2_FIXUP(struct relation * relation, struct relationTracker_2 * x);
-
 
 struct relation * searchRelation(char * idRelSearched);
 void leftRotateRelation(struct relation * x);
@@ -181,31 +180,13 @@ void deleteRelationSentToOrReceivedFrom_FIXUP(struct relationSentToOrReceivedFro
 // stringa che la rappresenta
 // riferimento all'albero delle sue relation tracker
 
-unsigned long hashFunction(char* word) {
-    /*SDBMHash*/
-    /*
-    unsigned int hash = 0;
-    unsigned int i = 0;
-
-    while(1){
-        if(word[i] == '\0'){
-            break;
-        }
-        hash = (*word) + (hash << 6) + (hash << 16) - hash;
-        word++;
-        i++;
-    }
-     return hash;
-    */
-
-    /*djb2Hash*/
-    unsigned long hash = 5381;
+unsigned long hashFunction(unsigned char *str) {
+    unsigned long hash = 0;
     int c;
 
-    while ((c = *word++))
-    {
-        hash = ((hash << 5) + hash);
-    }
+    while (c = *str++)
+        hash = c + (hash << 6) + (hash << 16) - hash;
+
     return hash % ENTITY_HASHTABLE_DIMENSION;
 }
 
