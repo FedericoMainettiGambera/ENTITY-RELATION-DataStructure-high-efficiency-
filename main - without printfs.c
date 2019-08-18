@@ -1411,7 +1411,7 @@ int main(void) {
 void addent(){
     int i = 0;
     int j = 7;
-    while(input[j] != '\n'){
+    while(input[j] != '\n' && input[j] != '\r'){
         idEnt[i] = input[j];
         j++;
         i++;
@@ -1447,7 +1447,7 @@ void addrel(){
     idDest[i] = '\0';
     j++;
     i=0;
-    while(input[j] != '\n'){
+    while(input[j] != '\n' && input[j] != '\r'){
         idRel[i] = input[j];
         j++;
         i++;
@@ -1693,7 +1693,7 @@ void delent(){
 
     int i = 0;
     int j = 7;
-    while(input[j] != '\n'){
+    while(input[j] != '\n' && input[j] != '\r'){
         idEnt[i] = input[j];
         j++;
         i++;
@@ -1751,7 +1751,7 @@ void delrel(){
     idDest[i] = '\0';
     j++;
     i=0;
-    while(input[j] != '\n'){
+    while(input[j] != '\n' && input[j] != '\r'){
         idRel[i] = input[j];
         j++;
         i++;
@@ -1955,6 +1955,7 @@ void sortedInsert(struct stringList** head_ref, struct stringList* new_node) {
         current->next = new_node;
     }
 }
+int reportDone = 0;
 void printReportRecursive(struct relation * relation){
     if(relation != &nullRelationNode){
 
@@ -1969,6 +1970,9 @@ void printReportRecursive(struct relation * relation){
             if (quantity != 0) {
                 if(alreadyPrintedSomething != 0){
                     fputs(" ", stdout);
+                }
+                else{
+                    reportDone = 1;
                 }
                 alreadyPrintedSomething = 1;
                 fputs(max->relationTracker_1->relation->name, stdout);
@@ -1994,6 +1998,7 @@ void printReportRecursive(struct relation * relation){
         printReportRecursive(relation->right);
     }
 }
+
 void fullReport();
 void fullReport(){
     int numberOfEntityPrinted = 0;
@@ -2059,14 +2064,14 @@ void report() {
 
     //fullReport();
 
-    if (relationTreeHead != &nullRelationNode) {
-        alreadyPrintedSomething = 0;
-        printReportRecursive(relationTreeHead);
-        fputs("\n", stdout);
+    alreadyPrintedSomething = 0;
+    printReportRecursive(relationTreeHead);
+    if(reportDone == 0){
+        fputs("none", stdout);
     }
-    else{
-        fputs("none\n", stdout);
-    }
+    reportDone = 0;
+    fputs("\n", stdout);
+
 
     //O(k*n):  itera in ogni relation e stampa la lista di max
     //
