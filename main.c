@@ -5,18 +5,23 @@
 #define RED 1
 #define BLACK 0
 
-#define STRING_DIMENSION 35
+#define STRING_DIMENSION 100
 #define ENTITY_HASHTABLE_DIMENSION 1237
 
 int numberOfTotalAddrel = 0;
 int numberOfTotalDelrel = 0;
 int numberOfTotalAddent = 0;
 int numberOfTotalDelent = 0;
+int numberOfEntityInHashTable = 0;
 
 char idEnt[STRING_DIMENSION];
+int idEntLength = 0;
 char idOrig[STRING_DIMENSION];
+int idOrigLength = 0;
 char idDest[STRING_DIMENSION];
+int idDestLength = 0;
 char idRel[STRING_DIMENSION];
+int idRelLenght = 0;
 
 
 /* entity (quadrato) */
@@ -25,7 +30,7 @@ char idRel[STRING_DIMENSION];
 // riferimento all'albero delle sue relation tracker
 
 struct entity{
-    char name[STRING_DIMENSION];
+    char * name;
     struct relationTracker_1 * relationTrackerEntityTreeHead;
     struct entity * nextEntity;
 };
@@ -36,7 +41,7 @@ struct entity{
 // riferimento all'albero 2 di relation tracker
 
 struct relation {
-    char name[STRING_DIMENSION];
+    char * name;
     struct relation * father;
     struct relation * left;
     struct relation * right;
@@ -69,7 +74,7 @@ struct relationTracker_1{
     struct relationSentToOrReceivedFrom * receivedFromTreeHead;
 
     struct relationTracker_2 * relationTracker_2;
-    unsigned int numberOfRelationReceived;
+    int numberOfRelationReceived;
 };
 
 struct relationTracker_2{
@@ -104,7 +109,6 @@ struct relationSentToOrReceivedFrom{
 /*declaration*/
 
 struct entity * entityHashTable[ENTITY_HASHTABLE_DIMENSION];
-int numberOfEntityInHashTable = 0; //temporaneo
 
 struct relationTracker_1 nullRelationTrackerNode_1;
 struct relationTracker_2 nullRelationTrackerNode_2;
@@ -121,9 +125,9 @@ void delent();
 void delrel();
 void report();
 
-void insertEntityHashTable(char entity[STRING_DIMENSION]);
-void deleteEntityHashTable(char entity[STRING_DIMENSION]);
-struct entity * searchEntityHashTable(char entity[STRING_DIMENSION]);
+void insertEntityHashTable(char *entity);
+void deleteEntityHashTable(char *entity);
+struct entity * searchEntityHashTable(char *entity);
 unsigned long hashFunction(unsigned char *str);
 
 struct relationTracker_1 *  searchRelationTracker_1(char * idRelation, struct entity * entity);
@@ -177,13 +181,13 @@ unsigned long hashFunction(unsigned char *str) {
     unsigned long hash = 0;
     int c;
 
-    while (c = *str++)
+    while ((c = *str++))
         hash = c + (hash << 6) + (hash << 16) - hash;
 
     return hash % ENTITY_HASHTABLE_DIMENSION;
 }
 
-struct entity * searchEntityHashTable(char entity[STRING_DIMENSION]){
+struct entity * searchEntityHashTable(char * entity){
     unsigned int hash = hashFunction(entity) % ENTITY_HASHTABLE_DIMENSION;
 
     struct entity * currentEntity = entityHashTable[hash];
@@ -198,19 +202,21 @@ struct entity * searchEntityHashTable(char entity[STRING_DIMENSION]){
     return NULL;
 }
 
-void insertEntityHashTable(char entity[STRING_DIMENSION]){
+void insertEntityHashTable(char *entity){
     unsigned int hash = hashFunction(entity) % ENTITY_HASHTABLE_DIMENSION;
 
     struct entity * currentEntity = entityHashTable[hash];
 
     if(currentEntity == NULL){
         //FIRST TIME ADD ELEMENT IN THAT HASH CELL
-        entityHashTable[hash] = malloc(sizeof(struct entity));
-        entityHashTable[hash]->nextEntity = NULL;
-        entityHashTable[hash]->relationTrackerEntityTreeHead = &nullRelationTrackerNode_1;
-        strcpy(entityHashTable[hash]->name, entity);
+        currentEntity = malloc(sizeof(struct entity));
+        currentEntity->nextEntity = NULL;
+        currentEntity->relationTrackerEntityTreeHead = &nullRelationTrackerNode_1;
+        currentEntity->name = malloc(idEntLength);
+        memcpy(currentEntity->name, entity, idEntLength);
         numberOfEntityInHashTable++;
         //printf("entity added as first ever element of the hash chain\n");
+        entityHashTable[hash] = currentEntity;
         numberOfTotalAddent++;
         return;
     }
@@ -226,8 +232,9 @@ void insertEntityHashTable(char entity[STRING_DIMENSION]){
         //ADD ELEMENT TO THE HEAD OF THE HASH CHAIN
         currentEntity = malloc(sizeof(struct entity));
         currentEntity->nextEntity = entityHashTable[hash];
-        strcpy(currentEntity->name, entity);
         currentEntity->relationTrackerEntityTreeHead = &nullRelationTrackerNode_1;
+        currentEntity->name = malloc(idEntLength);
+        memcpy(currentEntity->name, entity, idEntLength);
         entityHashTable[hash] = currentEntity;
         numberOfEntityInHashTable++;
         //printf("entity added as last element of the hash chain\n");
@@ -236,7 +243,7 @@ void insertEntityHashTable(char entity[STRING_DIMENSION]){
     }
 }
 
-void deleteEntityHashTable(char entity[STRING_DIMENSION]){
+void deleteEntityHashTable(char * entity){
     unsigned int hash = hashFunction(entity) % ENTITY_HASHTABLE_DIMENSION;
 
     struct entity * currentEntity = entityHashTable[hash];
@@ -251,6 +258,7 @@ void deleteEntityHashTable(char entity[STRING_DIMENSION]){
         if(strcmp(currentEntity->name, entity) == 0) {
             //ELEMENT FOUND, DELETE AND FREE MEMORY
             entityHashTable[hash] = currentEntity->nextEntity;
+            free(currentEntity->name);
             free(currentEntity);
             numberOfEntityInHashTable--;
             //printf("entity deleted, it was the first element in the hash chain\n");
@@ -273,6 +281,7 @@ void deleteEntityHashTable(char entity[STRING_DIMENSION]){
             if (strcmp(currentEntity->name, entity) == 0) {
                 //ELEMENT FOUND, DELETE AND FREE MEMORY
                 previousEntity->nextEntity = currentEntity->nextEntity;
+                free(currentEntity->name);
                 free(currentEntity);
                 numberOfEntityInHashTable--;
                 //printf("entity deleted from the hash chain\n");
@@ -284,6 +293,7 @@ void deleteEntityHashTable(char entity[STRING_DIMENSION]){
         if (strcmp(currentEntity->name, entity) == 0) {
             //ELEMENT FOUND, DELETE AND FREE MEMORY
             previousEntity->nextEntity = NULL;
+            free(currentEntity->name);
             free(currentEntity);
             numberOfEntityInHashTable--;
             //printf("entity deleted from the hash chain\n");
@@ -1364,6 +1374,7 @@ int main(void) {
         entityHashTable[i] = NULL;
     }
 
+    //initializing relation tree
     relationTreeHead = &nullRelationNode;
 
     while(1){
@@ -1388,6 +1399,7 @@ int main(void) {
             report();
         }
         else{
+            //fullReport();
             return 0;
         }
     }
@@ -1398,12 +1410,14 @@ int main(void) {
 void addent(){
     int i = 0;
     int j = 8;
+    idEntLength = 0;
     while(input[j] != '"'){
         idEnt[i] = input[j];
         j++;
         i++;
     }
     idEnt[i] = '\0';
+    idEntLength = i+1;
 
     //printf("idEnt: %s - hash: %lu\n", idEnt, hashFunction(idEnt));
 
@@ -1425,6 +1439,7 @@ void addrel(){
     }
     j+=3;
     idOrig[i] = '\0';
+    idOrigLength = i+1;
     i=0;
     while(input[j] != '"'){
         idDest[i] = input[j];
@@ -1433,6 +1448,7 @@ void addrel(){
     }
     j+=3;
     idDest[i] = '\0';
+    idDestLength = i+1;
     i=0;
     while(input[j] != '"'){
         idRel[i] = input[j];
@@ -1440,6 +1456,7 @@ void addrel(){
         i++;
     }
     idRel[i] = '\0';
+    idRelLenght = i+1;
 
     //printf("idOrig: %s \n", idOrig);
     //printf("idDest: %s \n", idDest);
@@ -1460,11 +1477,12 @@ void addrel(){
     struct relation * relation = searchRelation(idRel);
     if (relation == &nullRelationNode) {
         relation = malloc(sizeof(struct relation));
-        relation->left = &nullRelationNode;
-        relation->right = &nullRelationNode;
-        relation->father = &nullRelationNode;
-        relation->nodeColor = BLACK;
-        strcpy(relation->name, idRel);
+        //relation->left = &nullRelationNode;
+        //relation->right = &nullRelationNode;
+        //relation->father = &nullRelationNode;
+        //relation->nodeColor = BLACK;
+        relation->name = malloc(idRelLenght);
+        memcpy(relation->name, idRel, idRelLenght);
         relation->relationTrackerTreeHead = &nullRelationTrackerNode_2;
 
         insertRelation(relation);
@@ -1475,9 +1493,9 @@ void addrel(){
     struct relationTracker_1 * relTrackerOrig = searchRelationTracker_1(idRel, entityOrig);
     if (relTrackerOrig == &nullRelationTrackerNode_1) {
         relTrackerOrig = malloc(sizeof(struct relationTracker_1));
-        relTrackerOrig->leftNodeEntityTree = &nullRelationTrackerNode_1;
-        relTrackerOrig->rightNodeEntityTree = &nullRelationTrackerNode_1;
-        relTrackerOrig->fatherEntityTree = &nullRelationTrackerNode_1;
+        //relTrackerOrig->leftNodeEntityTree = &nullRelationTrackerNode_1;
+        //relTrackerOrig->rightNodeEntityTree = &nullRelationTrackerNode_1;
+        //relTrackerOrig->fatherEntityTree = &nullRelationTrackerNode_1;
         relTrackerOrig->sentToTreeHead = &nullRelationSentToOrReceivedFromNode;
         relTrackerOrig->receivedFromTreeHead = &nullRelationSentToOrReceivedFromNode;
         relTrackerOrig->entity = entityOrig;
@@ -1485,9 +1503,9 @@ void addrel(){
         relTrackerOrig->relation = relation;
         relTrackerOrig->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
         relTrackerOrig->relationTracker_2->relationTracker_1=relTrackerOrig;
-        relTrackerOrig->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
-        relTrackerOrig->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
-        relTrackerOrig->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
+        //relTrackerOrig->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
+        //relTrackerOrig->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
+        //relTrackerOrig->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
         //printf("relation tracker origin created\n");
 
         insertRelationTracker_1(entityOrig, relTrackerOrig);
@@ -1496,6 +1514,7 @@ void addrel(){
     }
 
     struct relationTracker_1 *relTrackerDest;
+    char firstTimeInsert = 0;
     if(entityDest == entityOrig){
         relTrackerDest = relTrackerOrig;
         //printf("entity orig and dest is the same (%s)\n", idOrig);
@@ -1504,36 +1523,37 @@ void addrel(){
         relTrackerDest = searchRelationTracker_1(idRel, entityDest);
         if (relTrackerDest == &nullRelationTrackerNode_1) {
             relTrackerDest = malloc(sizeof(struct relationTracker_1));
-            relTrackerDest->leftNodeEntityTree = &nullRelationTrackerNode_1;
-            relTrackerDest->rightNodeEntityTree = &nullRelationTrackerNode_1;
-            relTrackerDest->fatherEntityTree = &nullRelationTrackerNode_1;
+            //relTrackerDest->leftNodeEntityTree = &nullRelationTrackerNode_1;
+            //relTrackerDest->rightNodeEntityTree = &nullRelationTrackerNode_1;
+            //relTrackerDest->fatherEntityTree = &nullRelationTrackerNode_1;
             relTrackerDest->sentToTreeHead = &nullRelationSentToOrReceivedFromNode;
             relTrackerDest->receivedFromTreeHead = &nullRelationSentToOrReceivedFromNode;
-            relTrackerDest->numberOfRelationReceived = 0;
+            relTrackerDest->numberOfRelationReceived = 1;
             relTrackerDest->entity = entityDest;
             relTrackerDest->relation = relation;
             relTrackerDest->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
             relTrackerDest->relationTracker_2->relationTracker_1=relTrackerDest;
-            relTrackerDest->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
-            relTrackerDest->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
-            relTrackerDest->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
+            //relTrackerDest->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
+            //relTrackerDest->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
+            //relTrackerDest->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
             //printf("relation tracker destination created\n");
 
             insertRelationTracker_1(entityDest, relTrackerDest);
             insertRelationTracker_2(relation, relTrackerDest->relationTracker_2);
+            firstTimeInsert = 1;
             //printf("added relationTracker about %s to entity %sin ALBERO 1 and ALBERO 2\n", idRel, idDest);
         }
     }
 
-    struct relationSentToOrReceivedFrom *relationSentTo = searchRelationSentToOrReceivedFrom(entityDest->name, relTrackerOrig->sentToTreeHead);
+    struct relationSentToOrReceivedFrom *relationSentTo = searchRelationSentToOrReceivedFrom(idDest, relTrackerOrig->sentToTreeHead);
     if(relationSentTo == &nullRelationSentToOrReceivedFromNode) {
         //printf("creating new relationSentTo\n");
         relationSentTo = malloc(sizeof(struct relationSentToOrReceivedFrom));
         relationSentTo->internalEntity = entityOrig;
         relationSentTo->externalRelationTracker = relTrackerDest;
-        relationSentTo->left = &nullRelationSentToOrReceivedFromNode;
-        relationSentTo->right = &nullRelationSentToOrReceivedFromNode;
-        relationSentTo->father = &nullRelationSentToOrReceivedFromNode;
+        //relationSentTo->left = &nullRelationSentToOrReceivedFromNode;
+        //relationSentTo->right = &nullRelationSentToOrReceivedFromNode;
+        //relationSentTo->father = &nullRelationSentToOrReceivedFromNode;
     }
     else{
         //printf("relation already exists\n");
@@ -1546,23 +1566,24 @@ void addrel(){
     struct relationSentToOrReceivedFrom *relationReceivedFrom = malloc(sizeof(struct relationSentToOrReceivedFrom));
     relationReceivedFrom->internalEntity = entityDest;
     relationReceivedFrom->externalRelationTracker = relTrackerOrig;
-    relationReceivedFrom->left = &nullRelationSentToOrReceivedFromNode;
-    relationReceivedFrom->right = &nullRelationSentToOrReceivedFromNode;
-    relationReceivedFrom->father = &nullRelationSentToOrReceivedFromNode;
+    //relationReceivedFrom->left = &nullRelationSentToOrReceivedFromNode;
+    //relationReceivedFrom->right = &nullRelationSentToOrReceivedFromNode;
+    //relationReceivedFrom->father = &nullRelationSentToOrReceivedFromNode;
 
     insertRelationSentToOrReceivedFrom(relationReceivedFrom, &(relTrackerDest->receivedFromTreeHead));
     //printf("added relationReceivedFrom to the dest (%s)\n", idDest);
 
-    deleteRelationTracker_2(relation, relTrackerDest->relationTracker_2);
-    relTrackerDest->numberOfRelationReceived++;
-    relTrackerDest->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
-    relTrackerDest->relationTracker_2->relationTracker_1 = relTrackerDest;
-    relTrackerDest->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
-    relTrackerDest->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
-    relTrackerDest->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
-    insertRelationTracker_2(relation, relTrackerDest->relationTracker_2);
-    //printf("incremented numberOfRelationReceived of relation %s of entity dest %s\n", idRel, idDest);
-
+    if(firstTimeInsert == 0) {
+        deleteRelationTracker_2(relation, relTrackerDest->relationTracker_2);
+        relTrackerDest->numberOfRelationReceived++;
+        relTrackerDest->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
+        relTrackerDest->relationTracker_2->relationTracker_1 = relTrackerDest;
+        //relTrackerDest->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
+        //relTrackerDest->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
+        //relTrackerDest->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
+        insertRelationTracker_2(relation, relTrackerDest->relationTracker_2);
+        //printf("incremented numberOfRelationReceived of relation %s of entity dest %s\n", idRel, idDest);
+    }
     numberOfTotalAddrel++;
 
 
@@ -1591,9 +1612,12 @@ void deleteAllRelationTrackerRecursive_1(struct relationTracker_1 * currentRelat
         deleteAllRelationTrackerRecursive_1(currentRelationTracker->leftNodeEntityTree);
 
         //printf("\tanalizing relationTracker: %s\n", currentRelationTracker->relation->name);
+        //printf("\tdeleting Sent to:\n");
         deleteAllRelationSentToRecursive(currentRelationTracker->sentToTreeHead);
+        //printf("\tdeleting Received From:\n");
         deleteAllRelationReceivedFromRecursive(currentRelationTracker->receivedFromTreeHead);
         //free(deleteRelationTracker_2(currentRelationTracker->relation, currentRelationTracker->relationTracker_2));
+        //printf("\tdeleting relationTracker_2:\n");
         deleteRelationTracker_2(currentRelationTracker->relation, currentRelationTracker->relationTracker_2);
 
         deleteAllRelationTrackerRecursive_1(currentRelationTracker->rightNodeEntityTree);
@@ -1606,6 +1630,7 @@ void deleteAllRelationSentToRecursive(struct relationSentToOrReceivedFrom * curr
         deleteAllRelationSentToRecursive(currentRelationSentTo->left);
 
         //printf("\t\t%s->%s\n", currentRelationSentTo->internalEntity->name, currentRelationSentTo->externalRelationTracker->entity->name);
+        //printf("\t\t\tsearching relationReceivedFromExternalEntity...\n");
         struct relationSentToOrReceivedFrom * relationReceivedFromExternalEntity = searchRelationSentToOrReceivedFrom(
                 currentRelationSentTo->internalEntity->name,
                 currentRelationSentTo->externalRelationTracker->receivedFromTreeHead
@@ -1614,7 +1639,7 @@ void deleteAllRelationSentToRecursive(struct relationSentToOrReceivedFrom * curr
         //        relationReceivedFromExternalEntity,
         //        &(currentRelationSentTo->externalRelationTracker->receivedFromTreeHead)
         //));
-
+        //printf("\t\t\tdelentig relationReceivedFromExternalEntity...\n");
         deleteRelationSentToOrReceivedFrom(
                 relationReceivedFromExternalEntity,
                 &(currentRelationSentTo->externalRelationTracker->receivedFromTreeHead)
@@ -1625,18 +1650,18 @@ void deleteAllRelationSentToRecursive(struct relationSentToOrReceivedFrom * curr
         deleteRelationTracker_2(currentRelationSentTo->externalRelationTracker->relation,
                                 currentRelationSentTo->externalRelationTracker->relationTracker_2);
         currentRelationSentTo->externalRelationTracker->numberOfRelationReceived--;
-        currentRelationSentTo->externalRelationTracker->relationTracker_2 = malloc(
-                sizeof(struct relationTracker_2));
+        currentRelationSentTo->externalRelationTracker->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
         currentRelationSentTo->externalRelationTracker->relationTracker_2->relationTracker_1 = currentRelationSentTo->externalRelationTracker;
-        currentRelationSentTo->externalRelationTracker->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
-        currentRelationSentTo->externalRelationTracker->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
-        currentRelationSentTo->externalRelationTracker->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
+        //currentRelationSentTo->externalRelationTracker->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
+        //currentRelationSentTo->externalRelationTracker->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
+        //currentRelationSentTo->externalRelationTracker->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
         insertRelationTracker_2(currentRelationSentTo->externalRelationTracker->relation,
                                 currentRelationSentTo->externalRelationTracker->relationTracker_2);
         //printf("\t\t\tdiminished the number of relation received from the relationTracker of the dest (%s)\n", currentRelationSentTo->externalRelationTracker->entity->name);
 
 
         if(currentRelationSentTo->externalRelationTracker->sentToTreeHead == &nullRelationSentToOrReceivedFromNode && currentRelationSentTo->externalRelationTracker->receivedFromTreeHead ==&nullRelationSentToOrReceivedFromNode){
+            //printf("\t\t\tthe number of relation received from or sent is zero, deleting the relationTracker\n");
             deleteRelationTracker_2(currentRelationSentTo->externalRelationTracker->relation, currentRelationSentTo->externalRelationTracker->relationTracker_2);
             deleteRelationTracker_1(currentRelationSentTo->externalRelationTracker->entity, currentRelationSentTo->externalRelationTracker);
         }
@@ -1653,6 +1678,7 @@ void deleteAllRelationReceivedFromRecursive(struct relationSentToOrReceivedFrom 
         deleteAllRelationReceivedFromRecursive(currentRelationReceivedFrom->left);
 
         //printf("\t\t%s<-%s\n", currentRelationReceivedFrom->internalEntity->name, currentRelationReceivedFrom->externalRelationTracker->entity->name);
+        //printf("\t\t\tsearching relationSentToExternalEntity...\n");
         struct relationSentToOrReceivedFrom * relationSentToExternalEntity = searchRelationSentToOrReceivedFrom(
                 currentRelationReceivedFrom->internalEntity->name,
                 currentRelationReceivedFrom->externalRelationTracker->sentToTreeHead
@@ -1661,6 +1687,7 @@ void deleteAllRelationReceivedFromRecursive(struct relationSentToOrReceivedFrom 
         //        relationSentToExternalEntity,
         //        &(currentRelationReceivedFrom->externalRelationTracker->sentToTreeHead)
         //));
+        //printf("\t\t\tdelentig relationSentToExternalEntity...\n");
         deleteRelationSentToOrReceivedFrom(
                 relationSentToExternalEntity,
                 &(currentRelationReceivedFrom->externalRelationTracker->sentToTreeHead)
@@ -1676,11 +1703,13 @@ void deleteAllRelationReceivedFromRecursive(struct relationSentToOrReceivedFrom 
 
         deleteAllRelationReceivedFromRecursive(currentRelationReceivedFrom->right);
 
-        //free(currentRelationReceivedFrom);
+        free(currentRelationReceivedFrom);
     }
 }
 
 void delent(){
+
+    //fullReport();
 
     int i = 0;
     int j = 8;
@@ -1690,7 +1719,9 @@ void delent(){
         i++;
     }
     idEnt[i] = '\0';
+    idEntLength = i+1;
 
+    //printf("delent:\n");
     //printf("idEnt: %s - hash: %lu\n", idEnt, hashFunction(idEnt));
 
     struct entity * entity = searchEntityHashTable(idEnt);
@@ -1732,6 +1763,7 @@ void delrel(){
         i++;
     }
     idOrig[i] = '\0';
+    idOrigLength = i+1;
     i=0;
     j+=3;
     while(input[j] != '"'){
@@ -1740,6 +1772,7 @@ void delrel(){
         i++;
     }
     idDest[i] = '\0';
+    idDestLength = i+1;
     i=0;
     j+=3;
     while(input[j] != '"'){
@@ -1748,6 +1781,7 @@ void delrel(){
         i++;
     }
     idRel[i] = '\0';
+    idDestLength = i +1;
 
     struct entity * entityOrig = searchEntityHashTable(idOrig);
     if(entityOrig == NULL){
@@ -1795,9 +1829,9 @@ void delrel(){
     relTrackerDest->numberOfRelationReceived--;
     relTrackerDest->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
     relTrackerDest->relationTracker_2->relationTracker_1 = relTrackerDest;
-    relTrackerDest->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
-    relTrackerDest->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
-    relTrackerDest->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
+    //relTrackerDest->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
+    //relTrackerDest->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
+    //relTrackerDest->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
     insertRelationTracker_2(relation, relTrackerDest->relationTracker_2);
     //printf("decremented numberOfRelationReceived of relation %s of entity dest %s\n", idRel, idDest);
 
@@ -1902,13 +1936,13 @@ void deleteList(struct stringList * head);
 void sortedInsert(struct stringList** head_ref, struct stringList* new_node);
 int alreadyPrintedSomething = 0;
 struct stringList {
-    char name [50];
+    char * name;
     struct stringList * next;
 };
 struct stringList * newStringList(char * str){
     struct stringList * newStringList = malloc(sizeof(struct stringList));
 
-    strcpy(newStringList->name, str);
+    newStringList->name = str;
     newStringList->next = NULL;
 
     return newStringList;
