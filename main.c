@@ -27,15 +27,7 @@ char idRel[STRING_DIMENSION];
 struct entity{
     char name[STRING_DIMENSION];
     struct relationTracker_1 * relationTrackerEntityTreeHead;
-};
-
-struct hashCell{
-    struct hashChain * hashChain;
-};
-
-struct hashChain{
-    struct hashChain * nextHashChain;
-    struct entity * entity;
+    struct entity * nextEntity;
 };
 
 /* relation (stella) */
@@ -111,7 +103,7 @@ struct relationSentToOrReceivedFrom{
 
 /*declaration*/
 
-struct hashCell entityHashTable[ENTITY_HASHTABLE_DIMENSION];
+struct entity * entityHashTable[ENTITY_HASHTABLE_DIMENSION];
 int numberOfEntityInHashTable = 0; //temporaneo
 
 struct relationTracker_1 nullRelationTrackerNode_1;
@@ -194,13 +186,13 @@ unsigned long hashFunction(unsigned char *str) {
 struct entity * searchEntityHashTable(char entity[STRING_DIMENSION]){
     unsigned int hash = hashFunction(entity) % ENTITY_HASHTABLE_DIMENSION;
 
-    struct hashChain * currentElement = entityHashTable[hash].hashChain;
-    while(currentElement != NULL){
-        if(strcmp(currentElement->entity->name, entity) == 0){
+    struct entity * currentEntity = entityHashTable[hash];
+    while(currentEntity != NULL){
+        if(strcmp(currentEntity->name, entity) == 0){
             //printf("entity %s found in the hash table\n", entity);
-            return currentElement->entity;
+            return currentEntity;
         }
-        currentElement = currentElement->nextHashChain;
+        currentEntity = currentEntity->nextEntity;
     }
     //printf("entity %s not found in the hash table\n", entity);
     return NULL;
@@ -209,36 +201,34 @@ struct entity * searchEntityHashTable(char entity[STRING_DIMENSION]){
 void insertEntityHashTable(char entity[STRING_DIMENSION]){
     unsigned int hash = hashFunction(entity) % ENTITY_HASHTABLE_DIMENSION;
 
-    struct hashChain * currentHashChainElement = entityHashTable[hash].hashChain;
+    struct entity * currentEntity = entityHashTable[hash];
 
-    if(entityHashTable[hash].hashChain == NULL){
+    if(currentEntity == NULL){
         //FIRST TIME ADD ELEMENT IN THAT HASH CELL
-        entityHashTable[hash].hashChain = malloc(sizeof(struct hashChain));
-        (*entityHashTable[hash].hashChain).nextHashChain = NULL;
-        (*entityHashTable[hash].hashChain).entity = malloc(sizeof(struct entity));
-        (*entityHashTable[hash].hashChain).entity->relationTrackerEntityTreeHead = &nullRelationTrackerNode_1;
-        strcpy((*(*entityHashTable[hash].hashChain).entity).name, entity);
+        entityHashTable[hash] = malloc(sizeof(struct entity));
+        entityHashTable[hash]->nextEntity = NULL;
+        entityHashTable[hash]->relationTrackerEntityTreeHead = &nullRelationTrackerNode_1;
+        strcpy(entityHashTable[hash]->name, entity);
         numberOfEntityInHashTable++;
         //printf("entity added as first ever element of the hash chain\n");
         numberOfTotalAddent++;
         return;
     }
     else{
-        while(currentHashChainElement != NULL){
-            if(strcmp(currentHashChainElement->entity->name, entity) == 0){
+        while(currentEntity != NULL){
+            if(strcmp(currentEntity->name, entity) == 0){
                 //ALREADY EXISTS
                 //printf("entity already exists, not adding\n");
                 return;
             }
-            currentHashChainElement = currentHashChainElement->nextHashChain;
+            currentEntity = currentEntity->nextEntity;
         }
-        //ADD ELEMENT TO THE END OF THE HASH CHAIN
-        struct hashChain * new = malloc(sizeof(struct hashChain));
-        new->nextHashChain = entityHashTable[hash].hashChain;
-        new->entity = malloc(sizeof(struct entity));
-        memcpy(new->entity->name, entity, sizeof(char[STRING_DIMENSION]));
-        new->entity->relationTrackerEntityTreeHead = &nullRelationTrackerNode_1;
-        entityHashTable[hash].hashChain = new;
+        //ADD ELEMENT TO THE HEAD OF THE HASH CHAIN
+        currentEntity = malloc(sizeof(struct entity));
+        currentEntity->nextEntity = entityHashTable[hash];
+        strcpy(currentEntity->name, entity);
+        currentEntity->relationTrackerEntityTreeHead = &nullRelationTrackerNode_1;
+        entityHashTable[hash] = currentEntity;
         numberOfEntityInHashTable++;
         //printf("entity added as last element of the hash chain\n");
         numberOfTotalAddent++;
@@ -249,29 +239,28 @@ void insertEntityHashTable(char entity[STRING_DIMENSION]){
 void deleteEntityHashTable(char entity[STRING_DIMENSION]){
     unsigned int hash = hashFunction(entity) % ENTITY_HASHTABLE_DIMENSION;
 
-    if(entityHashTable[hash].hashChain == NULL){
+    struct entity * currentEntity = entityHashTable[hash];
+
+    if(currentEntity == NULL){
         //ELEMENT DOESN'T EXISTS
         //printf("entity doesn't exists, the hash chain is empty\n");
         return;
     }
     else{
-        struct hashChain * currentHashChainElement = entityHashTable[hash].hashChain;
-
         //check if it is the first element
-        if(strcmp((*currentHashChainElement).entity->name, entity) == 0) {
+        if(strcmp(currentEntity->name, entity) == 0) {
             //ELEMENT FOUND, DELETE AND FREE MEMORY
-            entityHashTable[hash].hashChain = (*currentHashChainElement).nextHashChain;
-            free(currentHashChainElement->entity);
-            free(currentHashChainElement);
+            entityHashTable[hash] = currentEntity->nextEntity;
+            free(currentEntity);
             numberOfEntityInHashTable--;
             //printf("entity deleted, it was the first element in the hash chain\n");
             return;
         }
 
         //set previous and current to iterate the chain
-        struct hashChain * previousHashChainElement = entityHashTable[hash].hashChain;
-        if((*currentHashChainElement).nextHashChain != NULL){
-            currentHashChainElement = (*currentHashChainElement).nextHashChain;
+        struct entity * previousEntity = entityHashTable[hash];
+        if(currentEntity->nextEntity != NULL){
+            currentEntity = currentEntity->nextEntity;
         }
         else{
             //ELEMENT DOESN'T EXISTS
@@ -280,24 +269,22 @@ void deleteEntityHashTable(char entity[STRING_DIMENSION]){
         }
 
         //iterate the chain
-        while(currentHashChainElement->nextHashChain != NULL){
-            if (strcmp((*currentHashChainElement).entity->name, entity) == 0) {
+        while(currentEntity->nextEntity != NULL){
+            if (strcmp(currentEntity->name, entity) == 0) {
                 //ELEMENT FOUND, DELETE AND FREE MEMORY
-                (*previousHashChainElement).nextHashChain = (*currentHashChainElement).nextHashChain;
-                free(currentHashChainElement->entity);
-                free(currentHashChainElement);
+                previousEntity->nextEntity = currentEntity->nextEntity;
+                free(currentEntity);
                 numberOfEntityInHashTable--;
                 //printf("entity deleted from the hash chain\n");
                 return;
             }
-            previousHashChainElement = currentHashChainElement;
-            currentHashChainElement = currentHashChainElement->nextHashChain;
+            previousEntity = currentEntity;
+            currentEntity = currentEntity->nextEntity;
         }
-        if (strcmp((*currentHashChainElement).entity->name, entity) == 0) {
+        if (strcmp(currentEntity->name, entity) == 0) {
             //ELEMENT FOUND, DELETE AND FREE MEMORY
-            (*previousHashChainElement).nextHashChain = (*currentHashChainElement).nextHashChain;
-            free(currentHashChainElement->entity);
-            free(currentHashChainElement);
+            previousEntity->nextEntity = NULL;
+            free(currentEntity);
             numberOfEntityInHashTable--;
             //printf("entity deleted from the hash chain\n");
             return;
@@ -1374,7 +1361,7 @@ int main(void) {
 
     //initilizing hash table
     for (int i = 0; i < ENTITY_HASHTABLE_DIMENSION ; ++i) {
-        entityHashTable[i].hashChain = NULL;
+        entityHashTable[i] = NULL;
     }
 
     relationTreeHead = &nullRelationNode;
@@ -2011,19 +1998,19 @@ void fullReport(){
     numberOfRelationReceivedPrinted_1 = 0;
     numberOfRelationReceivedPrinted_2 = 0;
     for (int i = 0; i < ENTITY_HASHTABLE_DIMENSION; ++i) {
-        if (entityHashTable[i].hashChain != NULL) {
+        if (entityHashTable[i] != NULL) {
 
             printf("hash table cell number [%d]\n", i);
 
-            struct hashChain *tempEnt = entityHashTable[i].hashChain;
-            while (tempEnt != NULL) {
+            struct entity * currentEntity = entityHashTable[i];
+            while (currentEntity != NULL) {
 
-                printf("\tentity: %s\n", tempEnt->entity->name);
+                printf("\tentity: %s\n", currentEntity->name);
                 numberOfEntityPrinted++;
 
-                printAllRelationTrackerRecursive_1(tempEnt->entity->relationTrackerEntityTreeHead);
+                printAllRelationTrackerRecursive_1(currentEntity->relationTrackerEntityTreeHead);
 
-                tempEnt = tempEnt->nextHashChain;
+                currentEntity = currentEntity->nextEntity;
             }
 
             printf("\n");
