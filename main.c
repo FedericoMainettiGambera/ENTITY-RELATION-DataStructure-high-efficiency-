@@ -1771,23 +1771,10 @@ void addent(){
     idEnt[i] = '\0';
     idEntLength = i+1;
 
-    //printf("\n********************************* ADDENT *********************************\n");
-    //printf("idEnt: %s - hash: %lu\n", idEnt, hashFunction(idEnt));
-
     insertEntityHashTable(idEnt);
-
-    //printf("**************************************************************************\n\n\n");
-    //fullReport();
-
-
-
-    //O(1):  aggiunge entity all'hash table delle entities se non esiste già
-    //
-    //TOTAL: O(1)
 }
 
 void addrel(){
-
     int i = 0;
     int j = 8;
     while(input[j] != '"'){
@@ -1816,37 +1803,23 @@ void addrel(){
     idRel[i] = '\0';
     idRelLenght = i+1;
 
-    //printf("\n********************************* ADDREL *********************************\n");
-    //printf("idOrig: %s \n", idOrig);
-    //printf("idDest: %s \n", idDest);
-    //printf("idRel: %s \n", idRel);
-
-
     struct entity *entityOrig = searchEntityHashTable(idOrig);
     if (entityOrig == NULL) {
-        //printf("entity %s doesn't exists\n", idOrig);
         return;
     }
     struct entity *entityDest = searchEntityHashTable(idDest);
     if (entityDest == NULL) {
-        //printf("entity %s doesn't exists\n", idDest);
         return;
     }
 
     struct relation * relation = searchRelation(idRel);
     if (relation == &nullRelationNode) {
         relation = malloc(sizeof(struct relation));
-        //relation->left = &nullRelationNode;
-        //relation->right = &nullRelationNode;
-        //relation->father = &nullRelationNode;
-        //relation->nodeColor = BLACK;
         relation->name = malloc(idRelLenght);
         memcpy(relation->name, idRel, idRelLenght);
         relation->relationTrackerTreeHead = &nullRelationTrackerNode_2;
 
         insertRelation(relation);
-
-        //printf("first time relation %s has been used, added to the relation tree\n", idRel);
     }
 
     struct relationTracker_1 * relTrackerOrig = searchRelationTracker_1(idRel, entityOrig);
@@ -1862,29 +1835,20 @@ void addrel(){
         relTrackerOrig->relation = relation;
         relTrackerOrig->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
         relTrackerOrig->relationTracker_2->relationTracker_1=relTrackerOrig;
-        //relTrackerOrig->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
-        //relTrackerOrig->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
-        //relTrackerOrig->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
-        //printf("relation tracker origin created\n");
 
         insertRelationTracker_1(entityOrig, relTrackerOrig);
         insertRelationTracker_2(relation, relTrackerOrig->relationTracker_2);
-        //printf("added relationTracker about %s to entity %s in ALBERO 1 and ALBERO 2\n", idRel, idOrig);
     }
 
     struct relationTracker_1 *relTrackerDest;
     int firstTimeInsert = 0;
     if(entityDest == entityOrig){
         relTrackerDest = relTrackerOrig;
-        //printf("entity orig and dest is the same (%s)\n", idOrig);
     }
     else {
         relTrackerDest = searchRelationTracker_1(idRel, entityDest);
         if (relTrackerDest == &nullRelationTrackerNode_1) {
             relTrackerDest = malloc(sizeof(struct relationTracker_1));
-            //relTrackerDest->leftNodeEntityTree = &nullRelationTrackerNode_1;
-            //relTrackerDest->rightNodeEntityTree = &nullRelationTrackerNode_1;
-            //relTrackerDest->fatherEntityTree = &nullRelationTrackerNode_1;
             relTrackerDest->sentToTreeHead = &nullRelationSentToOrReceivedFromNode;
             relTrackerDest->receivedFromTreeHead = &nullRelationSentToOrReceivedFromNode;
             relTrackerDest->numberOfRelationReceived = 1;
@@ -1892,35 +1856,25 @@ void addrel(){
             relTrackerDest->relation = relation;
             relTrackerDest->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
             relTrackerDest->relationTracker_2->relationTracker_1=relTrackerDest;
-            //relTrackerDest->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
-            //relTrackerDest->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
-            //relTrackerDest->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
-            //printf("relation tracker destination created\n");
 
             insertRelationTracker_1(entityDest, relTrackerDest);
             insertRelationTracker_2(relation, relTrackerDest->relationTracker_2);
             firstTimeInsert = 1;
-            //printf("added relationTracker about %s to entity %sin ALBERO 1 and ALBERO 2\n", idRel, idDest);
         }
     }
 
     struct relationSentToOrReceivedFrom *relationSentToOrReceivedFrom = searchRelationSentTo(idDest, relTrackerOrig->sentToTreeHead);
     if(relationSentToOrReceivedFrom == &nullRelationSentToOrReceivedFromNode) {
-        //printf("creating new relationSentToOrReceivedFrom\n");
         relationSentToOrReceivedFrom = malloc(sizeof(struct relationSentToOrReceivedFrom));
         relationSentToOrReceivedFrom->origRelationTracker = relTrackerOrig;
         relationSentToOrReceivedFrom->destRelationTracker = relTrackerDest;
     }
     else{
-        //printf("relation already exists\n");
         return;
     }
     insertRelationSentTo(relationSentToOrReceivedFrom, &(relTrackerOrig->sentToTreeHead));
-    //printf("added relationSentToOrReceivedFrom to the orig (%s)\n", relationSentToOrReceivedFrom->origRelationTracker->entity->name);
     insertRelationReceivedFrom(relationSentToOrReceivedFrom, &(relTrackerDest->receivedFromTreeHead));
-    //printf("added relationReceivedFromOrReceivedFrom to the dest (%s)\n", relationSentToOrReceivedFrom->destRelationTracker->entity->name);
     if(firstTimeInsert == 0) {
-        //printf("number of relation received of (%s) was (%d)\n", relationSentToOrReceivedFrom->destRelationTracker->entity->name, relationSentToOrReceivedFrom->destRelationTracker->numberOfRelationReceived);
         deleteRelationTracker_2(relation, relTrackerDest->relationTracker_2);
         relTrackerDest->numberOfRelationReceived++;
         relTrackerDest->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
@@ -1929,32 +1883,10 @@ void addrel(){
         relTrackerDest->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
         relTrackerDest->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
         insertRelationTracker_2(relation, relTrackerDest->relationTracker_2);
-        //printf("incremented numberOfRelationReceived of relation %s of entity dest %s\n", idRel, idDest);
-        //printf("number of relation received of (%s) was (%d)\n", relationSentToOrReceivedFrom->destRelationTracker->entity->name, relationSentToOrReceivedFrom->destRelationTracker->numberOfRelationReceived);
     }
     else{
-        //printf("relationTracker was created already with numberOfRelationReceived=1\n");
     }
     numberOfTotalAddrel++;
-
-    //printf("**************************************************************************\n\n\n");
-    //fullReport();
-
-
-
-
-    //O(1) + O(1):         cerca se le entity origin e receiver esistono nell'hash table delle entities,
-    //                     se almeno una non esiste non fa nulla
-    //O(log k) + O(log k): una volta trovate accede all'albero 1 delle relation tracker e cerca la relazione interessata per entrambe le entities,
-    //                     se non esistono crea il nodo per la relation tracker
-    //O(log n):            per l'entity origin accede all'albero delle entity sent to e lo aggiorna aggiungendo la relation tracker receiver
-    //O(log n) + O(log j): per l'entity receiver si aumenta di uno il numero di relation received, si sistema l'albero 2 delle relation tracker
-    //                     e in seguito si accede all'albero delle entity received from aggiornandolo con la relation tracker origin
-    //
-    //TOTAL:               O(1) + O(1) + O(log k) + O(log k) + O(log n) + O(log n) + O(log j)
-    // k= numero di relation tracker dell'entity considerata
-    // n= dimesione dell'albero delle relation sent to o relation received from
-    // j= dimensione dell'albero 2 di relation tracker della relation considerata
 }
 
 void deleteAllRelationTrackerRecursive_1(struct relationTracker_1 * currentRelationTracker);
@@ -2021,7 +1953,7 @@ void deleteAllRelationSentToRecursive(struct relationSentToOrReceivedFrom * curr
 
         deleteAllRelationSentToRecursive(currentRelationSentTo->rightSentTo);
 
-        //free(currentRelationSentTo);
+        free(currentRelationSentTo);
     }
 }
 void deleteAllRelationReceivedFromRecursive(struct relationSentToOrReceivedFrom * currentRelationReceivedFrom){ //TODO RISCRIVI QUESTA FUNZIONE
@@ -2059,9 +1991,6 @@ void deleteAllRelationReceivedFromRecursive(struct relationSentToOrReceivedFrom 
 }
 
 void delent(){
-
-    //fullReport();
-
     int i = 0;
     int j = 8;
     while(input[j] != '"'){
@@ -2072,12 +2001,8 @@ void delent(){
     idEnt[i] = '\0';
     idEntLength = i+1;
 
-    //printf("\n********************************* DELENT *********************************\n");
-    //printf("idEnt: %s - hash: %lu\n", idEnt, hashFunction(idEnt));
-
     struct entity * entity = searchEntityHashTable(idEnt);
     if(entity == NULL){
-        //printf("couldn't find the entity in the hash table\n");
         return;
     }
 
@@ -2086,25 +2011,6 @@ void delent(){
     deleteEntityHashTable(idEnt);
 
     numberOfTotalDelent++;
-
-    //printf("**************************************************************************\n\n\n");
-
-
-
-    //O(1):                 cerca se la entity esiste nell'hash table delle entities, se non esiste non fa nulla
-    //O(k):                 una volta trovata accede all'albero 1 delle relation tracker e per ognuna di queste:
-    //O(n):                          accede all'albero delle entity sent to e per ognuna di queste:
-    //O(log n) + O(log j):                       accede alla relation tracker del destinatario, dal relation tracker del destinatario entra nell'albero
-    //                                           delle relation received from, cerca quella corretta, cioè con origine l'entity considerata e la elimina;
-    //                                           in seguito aggiorna il numero di relation received del relation tracker del destinatario e sistema l'albero 2
-    //O(n):                          accede all'albero delle entity received from e per ognuna di queste:
-    //O(log n):                                  accede alla relation tracker dell'entity originaria, da qui entra nell'albero delle relation sent to,
-    //                                           cerca quella corretta, cioè quella con l'entity considerata e la elimina,
-    //
-    //TOTAL:                O(1) + O(k) * ( O(n) * ( O(log n) + O(log j) ) + O(n) * ( O(log n) ) )
-    // k= numero di relation tracker dell'entity considerata
-    // n= dimesione dell'albero delle relation sent to o relation received from
-    // j= dimensione dell'albero 2 di relation tracker della relation considerata
 }
 
 void delrel(){
@@ -2136,65 +2042,45 @@ void delrel(){
     idRel[i] = '\0';
     idDestLength = i +1;
 
-    //printf("\n********************************* DELREL *********************************\n");
-    //printf("idOrig: %s \n", idOrig);
-    //printf("idDest: %s \n", idDest);
-    //printf("idRel: %s \n", idRel);
-
     struct entity * entityOrig = searchEntityHashTable(idOrig);
     if(entityOrig == NULL){
-        //printf("entity %s doesn't exists\n", idOrig);
         return;
     }
     struct entity * entityDest = searchEntityHashTable(idDest);
     if(entityDest == NULL){
-        //printf("entity %s doesn't exists\n", idDest);
         return;
     }
 
     struct relation * relation = searchRelation(idRel);
     if(relation == &nullRelationNode){
-        //printf("relation %s doesn't exists in entities %s and %s\n", idRel, idOrig, idDest);
-        //printf("\tnote: couldn't find relation\n");
         return;
     }
 
     struct relationTracker_1 * relTrackerOrig = searchRelationTracker_1(idRel, entityOrig);
     if(relTrackerOrig == &nullRelationTrackerNode_1){
-        //printf("relation %s doesn't exists in entities %s and %s\n", idRel, idOrig, idDest);
-        //printf("\tnote: couldn't find relationTracker orig\n");
         return;
     }
 
     struct relationSentToOrReceivedFrom * relationReceivedFromOrSentTo = searchRelationSentTo(idDest, relTrackerOrig->sentToTreeHead);
     if(relationReceivedFromOrSentTo == &nullRelationSentToOrReceivedFromNode){
-        //printf("relation %s doesn't exists in entities %s and %s\n", idRel, idOrig, idDest);
-        //printf("\tnote: couldn't find relationSentTo from the relationTracker orig\n");
         return;
     }
 
     struct relationTracker_1 * relTrackerDest = relationReceivedFromOrSentTo->destRelationTracker;
 
-    //printf("deleting from the orig-sentToTreeHead and from the dest-receivedFromTreeHead the relation: %s->%s\n",
-    //        relationReceivedFromOrSentTo->origRelationTracker->entity->name,
-    //        relationReceivedFromOrSentTo->destRelationTracker->entity->name);
     deleteRelationSentTo(
             relationReceivedFromOrSentTo,
             &(relTrackerOrig->sentToTreeHead));
     deleteRelationReceivedFrom(
             relationReceivedFromOrSentTo,
             &(relTrackerDest->receivedFromTreeHead));
+    free(relationReceivedFromOrSentTo);
 
-    //fix albero 2
     deleteRelationTracker_2(relation, relTrackerDest->relationTracker_2);
     relTrackerDest->numberOfRelationReceived--;
     relTrackerDest->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
     relTrackerDest->relationTracker_2->relationTracker_1 = relTrackerDest;
-    //relTrackerDest->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
-    //relTrackerDest->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
-    //relTrackerDest->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
     insertRelationTracker_2(relation, relTrackerDest->relationTracker_2);
-    //printf("decremented numberOfRelationReceived of relation %s of entity dest %s\n", idRel, idDest);
 
     if(relTrackerDest != relTrackerOrig) {
         if (relTrackerOrig->receivedFromTreeHead == &nullRelationSentToOrReceivedFromNode &&
@@ -2217,23 +2103,6 @@ void delrel(){
     }
 
     numberOfTotalDelrel++;
-
-    //printf("**************************************************************************\n\n\n");
-
-    //fullReport();
-
-
-
-    //O(1):     cerca se le entities esistono nell'hash table, se non esistono non fa nulla
-    //O(log k): dalla entity origin accede all'albero 1 delle relation tracker e cerca la relation da eliminare, se non esiste non fa nulla
-    //O(log n): una volta trovata la relation, accede all'albero delle entity sent to e cerca quella corretta
-    //O(log n): una volta trovata, accede alla relation tracker del destinatario e cerca nell'albero delle relation received from il nodo da eliminare
-    //O(1):     elimina tutto ciò che rimane da eliminare
-    //
-    //TOTAL:    O(1) + O(log k) + O(log n) + O(log n) + O(1)
-    // k= numero di relation tracker dell'entity considerata
-    // n= dimesione dell'albero delle relation sent to o relation received from
-    // j= dimensione dell'albero 2 di relation tracker della relation considerata
 }
 
 int numberOfRelationReceivedPrinted_1 = 0;
@@ -2470,10 +2339,6 @@ void fullReport(){
 }
 void report() {
 
-    //printf("\n********************************* REPORT *********************************\n");
-
-    //fullReport();
-
     alreadyPrintedSomething = 0;
     printReportRecursive(relationTreeHead);
     if(reportDone == 0){
@@ -2481,12 +2346,4 @@ void report() {
     }
     reportDone = 0;
     fputs("\n", stdout);
-
-    //printf("**************************************************************************\n\n\n");
-
-    //O(k*n):  itera in ogni relation e stampa la lista di max
-    //
-    //TOTAL: O(k*n)
-    // k= numero totale di tipi di relazioni esistenti
-    // n= numero di parimerito con max numero direlazioni entranti
 }
