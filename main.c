@@ -952,8 +952,15 @@ void insertRelationTracker_2(struct relation * relation, struct relationTracker_
     while(x != &nullRelationTrackerNode_2){
         i++;
         y = x;
-
-        if(z->relationTracker_1->numberOfRelationReceived < x->relationTracker_1->numberOfRelationReceived){
+        if(z->relationTracker_1->numberOfRelationReceived == x->relationTracker_1->numberOfRelationReceived){
+            if(strcmp(z->relationTracker_1->entity->name, x->relationTracker_1->entity->name) < 0){
+                x = x->leftNodeRelationTree;
+            }
+            else{
+                x = x->rightNodeRelationTree;
+            }
+        }
+        else if(z->relationTracker_1->numberOfRelationReceived < x->relationTracker_1->numberOfRelationReceived){
             x = x->leftNodeRelationTree;
         }
         else{
@@ -963,6 +970,14 @@ void insertRelationTracker_2(struct relation * relation, struct relationTracker_
     z->fatherRelationTree = y;
     if(y == &nullRelationTrackerNode_2){
         relation->relationTrackerTreeHead = z;
+    }
+    else if(z->relationTracker_1->numberOfRelationReceived == y->relationTracker_1->numberOfRelationReceived){
+        if(strcmp(z->relationTracker_1->entity->name, y->relationTracker_1->entity->name) < 0){
+            y->leftNodeRelationTree = z;
+        }
+        else{
+            y->rightNodeRelationTree = z;
+        }
     }
     else if(z->relationTracker_1->numberOfRelationReceived < y->relationTracker_1->numberOfRelationReceived){
         y->leftNodeRelationTree = z;
@@ -2209,6 +2224,19 @@ void sortedInsert(struct stringList** head_ref, struct stringList* new_node) {
         current->next = new_node;
     }
 }
+void printMaxInOrderRecursive(unsigned int quantity, struct relationTracker_2 * x){
+    if(x != &nullRelationTrackerNode_2){
+        printMaxInOrderRecursive(quantity, x->leftNodeRelationTree);
+
+        if(x->relationTracker_1->numberOfRelationReceived == quantity) {
+            fputs("\"", stdout);
+            fputs(x->relationTracker_1->entity->name, stdout);
+            fputs("\" ", stdout);
+        }
+
+        printMaxInOrderRecursive(quantity, x->rightNodeRelationTree);
+    }
+}
 int reportDone = 0;
 void printReportRecursive(struct relation * relation){
     if(relation != &nullRelationNode){
@@ -2216,9 +2244,16 @@ void printReportRecursive(struct relation * relation){
         printReportRecursive(relation->left);
 
         struct relationTracker_2 * max = relation->relationTrackerTreeHead;
+        struct relationTracker_2 * scrollNode = relation->relationTrackerTreeHead;
         if(max != &nullRelationTrackerNode_2) {
-            while (max->rightNodeRelationTree != &nullRelationTrackerNode_2) {
-                max = max->rightNodeRelationTree;
+            while (scrollNode->rightNodeRelationTree != &nullRelationTrackerNode_2) {
+                if(scrollNode->relationTracker_1->numberOfRelationReceived > max->relationTracker_1->numberOfRelationReceived){
+                    max = scrollNode;
+                }
+                scrollNode = scrollNode->rightNodeRelationTree;
+            }
+            if(scrollNode->relationTracker_1->numberOfRelationReceived > max->relationTracker_1->numberOfRelationReceived){
+                max = scrollNode;
             }
             unsigned int quantity = max->relationTracker_1->numberOfRelationReceived;
             if (quantity != 0) {
@@ -2233,20 +2268,13 @@ void printReportRecursive(struct relation * relation){
                 fputs(max->relationTracker_1->relation->name, stdout);
                 fputs("\" ",stdout);
 
-                struct stringList * head = NULL;
-                while (max->fatherRelationTree != &nullRelationTrackerNode_2 && quantity == max->fatherRelationTree->relationTracker_1->numberOfRelationReceived) {
-                    sortedInsert(&head, newStringList(max->relationTracker_1->entity->name));
-                    max = max->fatherRelationTree;
-                }
-                sortedInsert(&head, newStringList(max->relationTracker_1->entity->name));
-
-                //max here is the top node of the sub tree of the max
-                printList(head);
-
-                deleteList(head);
+                printMaxInOrderRecursive(quantity, max);
 
                 printf("%d", quantity);
                 fputs(";", stdout);
+
+                reportDone=1;
+
             }
         }
 
@@ -2338,7 +2366,6 @@ void fullReport(){
     }
 }
 void report() {
-
     alreadyPrintedSomething = 0;
     printReportRecursive(relationTreeHead);
     if(reportDone == 0){
