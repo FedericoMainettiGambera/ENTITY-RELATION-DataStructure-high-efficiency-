@@ -4,6 +4,8 @@
 
 #define RED 1
 #define BLACK 0
+#define RECEIVED 0
+#define SENT 1
 
 #define STRING_DIMENSION 100
 #define ENTITY_HASHTABLE_DIMENSION 1237
@@ -96,12 +98,16 @@ struct relationTracker_2{
 // riferimento alla relation tracker origin
 
 struct relationSentToOrReceivedFrom{
-    struct relationSentToOrReceivedFrom * right;
-    struct relationSentToOrReceivedFrom * left;
-    struct relationSentToOrReceivedFrom * father;
-    int nodeColor:1;
-    struct entity * internalEntity;
-    struct relationTracker_1 * externalRelationTracker;
+    struct relationSentToOrReceivedFrom * rightSentTo;
+    struct relationSentToOrReceivedFrom * leftSentTo;
+    struct relationSentToOrReceivedFrom * fatherSentTo;
+    int nodeColorSentTo:1;
+    struct relationSentToOrReceivedFrom * rightReceivedFrom;
+    struct relationSentToOrReceivedFrom * leftReceivedFrom;
+    struct relationSentToOrReceivedFrom * fatherReceivedFrom;
+    int nodeColorReceivedFrom:1;
+    struct relationTracker_1 * origRelationTracker;
+    struct relationTracker_1 * destRelationTracker;
 };
 
 
@@ -137,8 +143,11 @@ void insertRelationTracker_1(struct entity * entity, struct relationTracker_1 * 
 void insertRelationTracker_1_FIXUP(struct entity * entity, struct relationTracker_1 * newNode);
 struct relationTracker_1 * minimumRelationTracker_1(struct relationTracker_1 * node);
 struct relationTracker_1 * successorRelationTracker_1(struct relationTracker_1 * node);
-void deleteRelationTracker_1(struct entity * entity, struct relationTracker_1 * node);
+void deleteRelationTracker_1(struct entity * entity, struct relationTracker_1 * z);
 void deleteRelationTracker_1_FIXUP(struct entity * entity, struct relationTracker_1 * node);
+
+void fixReceivedFromRecursive(struct relationTracker_1 ** node, struct relationSentToOrReceivedFrom * receivedFromTreeHead);
+void fixSentToRecursive(struct relationTracker_1 ** node, struct relationSentToOrReceivedFrom * SentToTreeHead);
 
 
 void leftRotateRelationTracker_2(struct relationTracker_2 * x, struct relation * relation);
@@ -161,16 +170,27 @@ struct relation * successorRelation(struct relation * x);
 void deleteRelation(struct relation * z);
 void deleteRelation_FIXUP(struct relation * x);
 
-struct relationSentToOrReceivedFrom * searchRelationSentToOrReceivedFrom(char * externalId, struct relationSentToOrReceivedFrom * head);
-void leftRotateRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head);
-void rightRotateRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head);
-void insertRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head);
-void insertRelationSentToOrReceivedFrom_FIXUP(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head);
-struct relationSentToOrReceivedFrom * minimumRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * x);
-struct relationSentToOrReceivedFrom * successorRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * x);
-void deleteRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head);
-void deleteRelationSentToOrReceivedFrom_FIXUP(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head);
+struct relationSentToOrReceivedFrom * searchRelationSentTo(char * destId, struct relationSentToOrReceivedFrom * head);
+void leftRotateRelationSentTo(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head);
+void rightRotateRelationSentTo(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head);
+void insertRelationSentTo(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head);
+void insertRelationSentTo_FIXUP(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head);
+struct relationSentToOrReceivedFrom * minimumRelationSentTo(struct relationSentToOrReceivedFrom * x);
+struct relationSentToOrReceivedFrom * successorRelationSentTo(struct relationSentToOrReceivedFrom * x);
+void deleteRelationSentTo(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head);
+void deleteRelationSentTo_FIXUP(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head);
 
+struct relationSentToOrReceivedFrom * searchRelationReceivedFrom(char * origId, struct relationSentToOrReceivedFrom * head);
+void leftRotateRelationReceivedFrom(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head);
+void rightRotateRelationReceivedFrom(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head);
+void insertRelationReceivedFrom(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head);
+void insertRelationReceivedFrom_FIXUP(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head);
+struct relationSentToOrReceivedFrom * minimumRelationReceivedFrom(struct relationSentToOrReceivedFrom * x);
+struct relationSentToOrReceivedFrom * successorRelationReceivedFrom(struct relationSentToOrReceivedFrom * x);
+void deleteRelationReceivedFrom(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head);
+void deleteRelationReceivedFrom_FIXUP(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head);
+
+void fullReport();
 
 /* entity (quadrato) */
 // è in una hash table
@@ -741,35 +761,35 @@ struct relationTracker_1 * successorRelationTracker_1(struct relationTracker_1 *
     return temp;
 }
 
-void fixReceivedFromRecursive(struct relationTracker_1 ** y, struct relationTracker_1 ** node, struct relationSentToOrReceivedFrom * receivedFromTreeHead);
-void fixReceivedFromRecursive(struct relationTracker_1 ** y, struct relationTracker_1 ** node, struct relationSentToOrReceivedFrom * receivedFromTreeHead){
+void fixReceivedFromRecursive(struct relationTracker_1 ** node, struct relationSentToOrReceivedFrom * receivedFromTreeHead){
     if(receivedFromTreeHead != &nullRelationSentToOrReceivedFromNode){
-        fixReceivedFromRecursive(y, node, receivedFromTreeHead->left);
+        fixReceivedFromRecursive(node, receivedFromTreeHead->leftReceivedFrom);
 
-        (searchRelationSentToOrReceivedFrom((*node)->entity->name, receivedFromTreeHead->externalRelationTracker->sentToTreeHead))->externalRelationTracker = *node;
+        receivedFromTreeHead->destRelationTracker = *node;
 
-        fixReceivedFromRecursive(y, node, receivedFromTreeHead->right);
+        fixReceivedFromRecursive(node, receivedFromTreeHead->rightReceivedFrom);
     }
 }
-void fixSentToRecursive(struct relationTracker_1 ** y, struct relationTracker_1 ** node, struct relationSentToOrReceivedFrom * SentToTreeHead);
-void fixSentToRecursive(struct relationTracker_1 ** y, struct relationTracker_1 ** node, struct relationSentToOrReceivedFrom * SentToTreeHead){
+
+void fixSentToRecursive(struct relationTracker_1 ** node, struct relationSentToOrReceivedFrom * SentToTreeHead){
     if(SentToTreeHead != &nullRelationSentToOrReceivedFromNode){
-        fixSentToRecursive(y, node, SentToTreeHead->left);
+        fixSentToRecursive(node, SentToTreeHead->leftSentTo);
 
-        (searchRelationSentToOrReceivedFrom((*node)->entity->name, SentToTreeHead->externalRelationTracker->receivedFromTreeHead))->externalRelationTracker = *node;
+        SentToTreeHead->origRelationTracker = *node;
 
-        fixSentToRecursive(y, node, SentToTreeHead->right);
+        fixSentToRecursive(node, SentToTreeHead->rightSentTo);
     }
 }
-void deleteRelationTracker_1(struct entity * entity, struct relationTracker_1 * node){
+
+void deleteRelationTracker_1(struct entity * entity, struct relationTracker_1 * z){
     struct relationTracker_1 * x;
     struct relationTracker_1 * y;
 
-    if(node->leftNodeEntityTree == &nullRelationTrackerNode_1 || node->rightNodeEntityTree == &nullRelationTrackerNode_1){
-        y = node;
+    if(z->leftNodeEntityTree == &nullRelationTrackerNode_1 || z->rightNodeEntityTree == &nullRelationTrackerNode_1){
+        y = z;
     }
     else{
-        y = successorRelationTracker_1(node);
+        y = successorRelationTracker_1(z);
     }
     if(y->leftNodeEntityTree != &nullRelationTrackerNode_1){
         x = y->leftNodeEntityTree;
@@ -787,17 +807,33 @@ void deleteRelationTracker_1(struct entity * entity, struct relationTracker_1 * 
     else{
         y->fatherEntityTree->rightNodeEntityTree = x;
     }
-    if( y != node){
-        node->relation = y->relation;
-        node->entity = y->entity;
-        node->numberOfRelationReceived = y->numberOfRelationReceived;
-        node->receivedFromTreeHead = y->receivedFromTreeHead;
-        node->sentToTreeHead = y->sentToTreeHead;
-        node->relationTracker_2 = y->relationTracker_2;
-        y->relationTracker_2->relationTracker_1 = node;
-        fixReceivedFromRecursive(&y, &node, y->receivedFromTreeHead);
-        fixSentToRecursive(&y, &node, y->sentToTreeHead);
-        //y->receivedFromTreeHead->externalRelationTracker->sentToTreeHead->externalRelationTracker == y  diventa  = node
+    if(y != z){
+        int oldColor = y->nodeColorEntityTree;
+        y->nodeColorEntityTree = z->nodeColorEntityTree;
+
+        if(z == entity->relationTrackerEntityTreeHead){
+            entity->relationTrackerEntityTreeHead = y;
+        }
+        else {
+            if (z->fatherEntityTree->leftNodeEntityTree == z) {
+                z->fatherEntityTree->leftNodeEntityTree = y;
+            } else {
+                z->fatherEntityTree->rightNodeEntityTree = y;
+            }
+        }
+        z->leftNodeEntityTree->fatherEntityTree = y;
+        z->rightNodeEntityTree->fatherEntityTree = y;
+
+        y->fatherEntityTree = z->fatherEntityTree;
+        y->leftNodeEntityTree = z->leftNodeEntityTree;
+        y->rightNodeEntityTree = z->rightNodeEntityTree;
+
+        if(oldColor == BLACK){
+            deleteRelationTracker_2_FIXUP(entity, x);
+        }
+
+        free(z);
+        return;
     }
     if(y->nodeColorEntityTree == BLACK){
         deleteRelationTracker_1_FIXUP(entity, x);
@@ -1037,8 +1073,32 @@ void deleteRelationTracker_2(struct relation * relation, struct relationTracker_
         y->fatherRelationTree->rightNodeRelationTree = x;
     }
     if(y != z){
-        z->relationTracker_1 = y->relationTracker_1;
-        z->relationTracker_1->relationTracker_2 = z;
+        int oldColor = y->nodeColorRelationTree;
+        y->nodeColorRelationTree = z->nodeColorRelationTree;
+
+        if(z == relation->relationTrackerTreeHead) {
+            relation->relationTrackerTreeHead = y;
+        }
+        else {
+            if (z->fatherRelationTree->leftNodeRelationTree == z) {
+                z->fatherRelationTree->leftNodeRelationTree = y;
+            } else {
+                z->fatherRelationTree->rightNodeRelationTree = y;
+            }
+        }
+        z->leftNodeRelationTree->fatherRelationTree = y;
+        z->rightNodeRelationTree->fatherRelationTree = y;
+
+        y->fatherRelationTree = z->fatherRelationTree;
+        y->leftNodeRelationTree = z->leftNodeRelationTree;
+        y->rightNodeRelationTree = z->rightNodeRelationTree;
+
+        if(oldColor == BLACK){
+            deleteRelationTracker_2_FIXUP(relation, x);
+        }
+
+        free(z);
+        return;
     }
     if(y->nodeColorRelationTree == BLACK){
         deleteRelationTracker_2_FIXUP(relation, x);
@@ -1114,256 +1174,548 @@ void deleteRelationTracker_2_FIXUP(struct relation * relation, struct relationTr
 // è in un albero ordinato in base all'indirizzo di memoria della relation tracker origin e con possibilità di essere iterato
 // riferimento alla relation tracker origin
 
-struct relationSentToOrReceivedFrom * searchRelationSentToOrReceivedFrom(char * externalId, struct relationSentToOrReceivedFrom * head){
+//SENT
+struct relationSentToOrReceivedFrom * searchRelationSentTo(char * destId, struct relationSentToOrReceivedFrom * head){
     struct relationSentToOrReceivedFrom *result = head;
 
     while (result != &nullRelationSentToOrReceivedFromNode) {
-        int cmp = strcmp(result->externalRelationTracker->entity->name, externalId);
+        int cmp = strcmp(result->destRelationTracker->entity->name, destId);
         if (cmp == 0) {
-            //printf("relationSentToOrReceivedFrom referred to entity %s found\n", externalId);
+            //printf("relationSentToOrReceivedFrom referred to entity %s found\n", destId);
             return result;
         } else if (cmp > 0) {
-            result = result->left;
+            result = result->leftSentTo;
         } else {
-            result = result->right;
+            result = result->rightSentTo;
         }
     }
-    //printf("relationSentToOrReceivedFrom referred to entity %s not found\n", externalId);
+    //printf("relationSentToOrReceivedFrom referred to entity %s not found\n", destId);
     return result;
 }
 
-void leftRotateRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head){
-    struct relationSentToOrReceivedFrom * y = x->right;
-    x->right = y->left;
-    if(y->left != &nullRelationSentToOrReceivedFromNode){
-        y->left->father = x;
+void leftRotateRelationSentTo(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head){
+    struct relationSentToOrReceivedFrom * y = x->rightSentTo;
+    x->rightSentTo = y->leftSentTo;
+    if(y->leftSentTo != &nullRelationSentToOrReceivedFromNode){
+        y->leftSentTo->fatherSentTo = x;
     }
-    y->father = x->father;
-    if(x->father == &nullRelationSentToOrReceivedFromNode){
+    y->fatherSentTo = x->fatherSentTo;
+    if(x->fatherSentTo == &nullRelationSentToOrReceivedFromNode){
         *head = y;
     }
-    else if(x == x->father->left){
-        x->father->left = y;
+    else if(x == x->fatherSentTo->leftSentTo){
+        x->fatherSentTo->leftSentTo = y;
     }
     else{
-        x->father->right = y;
+        x->fatherSentTo->rightSentTo = y;
     }
-    y->left = x;
-    x->father = y;
+    y->leftSentTo = x;
+    x->fatherSentTo = y;
 }
 
-void rightRotateRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head){
-    struct relationSentToOrReceivedFrom * y = x->left;
-    x->left = y->right;
-    if(y->right != &nullRelationSentToOrReceivedFromNode){
-        y->right->father = x;
+void rightRotateRelationSentTo(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head){
+    struct relationSentToOrReceivedFrom * y = x->leftSentTo;
+    x->leftSentTo = y->rightSentTo;
+    if(y->rightSentTo != &nullRelationSentToOrReceivedFromNode){
+        y->rightSentTo->fatherSentTo = x;
     }
-    y->father = x->father;
-    if(x->father == &nullRelationSentToOrReceivedFromNode){
+    y->fatherSentTo = x->fatherSentTo;
+    if(x->fatherSentTo == &nullRelationSentToOrReceivedFromNode){
         *head = y;
     }
-    else if(x == x->father->right){
-        x->father->right = y;
+    else if(x == x->fatherSentTo->rightSentTo){
+        x->fatherSentTo->rightSentTo = y;
     }
     else{
-        x->father->left = y;
+        x->fatherSentTo->leftSentTo = y;
     }
-    y->right = x;
-    x->father = y;
+    y->rightSentTo = x;
+    x->fatherSentTo = y;
 }
 
-void insertRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head){
+void insertRelationSentTo(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head){
     struct relationSentToOrReceivedFrom * y = &nullRelationSentToOrReceivedFromNode;
     struct relationSentToOrReceivedFrom * x = *head;
     while(x != &nullRelationSentToOrReceivedFromNode){
         y = x;
-        if(strcmp(z->externalRelationTracker->entity->name, x->externalRelationTracker->entity->name) < 0){
-            x = x->left;
+        if(strcmp(z->destRelationTracker->entity->name, x->destRelationTracker->entity->name) < 0){
+            x = x->leftSentTo;
         }
         else{
-            x = x->right;
+            x = x->rightSentTo;
         }
     }
-    z->father = y;
+    z->fatherSentTo = y;
     if(y == &nullRelationSentToOrReceivedFromNode){
         *head = z;
     }
-    else if(strcmp(z->externalRelationTracker->entity->name, y->externalRelationTracker->entity->name) < 0){
-        y->left = z;
+    else if(strcmp(z->destRelationTracker->entity->name, y->destRelationTracker->entity->name) < 0){
+        y->leftSentTo = z;
     }
     else{
-        y->right = z;
+        y->rightSentTo = z;
     }
-    z->left = &nullRelationSentToOrReceivedFromNode;
-    z->right = &nullRelationSentToOrReceivedFromNode;
-    z->nodeColor = RED;
-    insertRelationSentToOrReceivedFrom_FIXUP(z, head);
+    z->leftSentTo = &nullRelationSentToOrReceivedFromNode;
+    z->rightSentTo = &nullRelationSentToOrReceivedFromNode;
+    z->nodeColorSentTo = RED;
+    insertRelationSentTo_FIXUP(z, head);
 }
 
-void insertRelationSentToOrReceivedFrom_FIXUP(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head){
+void insertRelationSentTo_FIXUP(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head){
     struct relationSentToOrReceivedFrom * y;
     struct relationSentToOrReceivedFrom * x;
     if(z == *head){
-        relationTreeHead->nodeColor = BLACK;
+        z->nodeColorSentTo = BLACK;
     }
     else{
-        x = z->father;
-        if(x->nodeColor == RED){
-            if( x == x->father->left){
-                y = x->father->right;
-                if(y->nodeColor == RED){
-                    x->nodeColor = BLACK;
-                    y->nodeColor = BLACK;
-                    x->father->nodeColor = RED;
-                    insertRelationSentToOrReceivedFrom_FIXUP(x->father, head);
+        x = z->fatherSentTo;
+        if(x->nodeColorSentTo == RED){
+            if( x == x->fatherSentTo->leftSentTo){
+                y = x->fatherSentTo->rightSentTo;
+                if(y->nodeColorSentTo == RED){
+                    x->nodeColorSentTo = BLACK;
+                    y->nodeColorSentTo = BLACK;
+                    x->fatherSentTo->nodeColorSentTo = RED;
+                    insertRelationSentTo_FIXUP(x->fatherSentTo, head);
                 }
                 else{
-                    if(z == x->right){
+                    if(z == x->rightSentTo){
                         z = x;
-                        leftRotateRelationSentToOrReceivedFrom(z, head);
-                        x = z->father;
+                        leftRotateRelationSentTo(z, head);
+                        x = z->fatherSentTo;
                     }
-                    x->nodeColor = BLACK;
-                    x->father->nodeColor = RED;
-                    rightRotateRelationSentToOrReceivedFrom(x->father, head);
+                    x->nodeColorSentTo = BLACK;
+                    x->fatherSentTo->nodeColorSentTo = RED;
+                    rightRotateRelationSentTo(x->fatherSentTo, head);
                 }
             }
             else{
-                y = x->father->left;
-                if(y->nodeColor == RED){
-                    x->nodeColor = BLACK;
-                    y->nodeColor = BLACK;
-                    x->father->nodeColor = RED;
-                    insertRelationSentToOrReceivedFrom_FIXUP(x->father, head);
+                y = x->fatherSentTo->leftSentTo;
+                if(y->nodeColorSentTo == RED){
+                    x->nodeColorSentTo = BLACK;
+                    y->nodeColorSentTo = BLACK;
+                    x->fatherSentTo->nodeColorSentTo = RED;
+                    insertRelationSentTo_FIXUP(x->fatherSentTo, head);
                 }
                 else{
-                    if(z == x->left){
+                    if(z == x->leftSentTo){
                         z = x;
-                        rightRotateRelationSentToOrReceivedFrom(z, head);
-                        x = z->father;
+                        rightRotateRelationSentTo(z, head);
+                        x = z->fatherSentTo;
                     }
-                    x->nodeColor = BLACK;
-                    x->father->nodeColor = RED;
-                    leftRotateRelationSentToOrReceivedFrom(x->father, head);
+                    x->nodeColorSentTo = BLACK;
+                    x->fatherSentTo->nodeColorSentTo = RED;
+                    leftRotateRelationSentTo(x->fatherSentTo, head);
                 }
             }
         }
     }
 }
 
-struct relationSentToOrReceivedFrom * minimumRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * x){
-    while (x->left != &nullRelationSentToOrReceivedFromNode){
-        x = x->left;
+struct relationSentToOrReceivedFrom * minimumRelationSentTo(struct relationSentToOrReceivedFrom * x){
+    while (x->leftSentTo != &nullRelationSentToOrReceivedFromNode){
+        x = x->leftSentTo;
     }
     return x;
 }
 
-struct relationSentToOrReceivedFrom * successorRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * x){
+struct relationSentToOrReceivedFrom * successorRelationSentTo(struct relationSentToOrReceivedFrom * x){
     struct relationSentToOrReceivedFrom * y;
-    if(x->right != &nullRelationSentToOrReceivedFromNode){
-        return minimumRelationSentToOrReceivedFrom(x->right);
+    if(x->rightSentTo != &nullRelationSentToOrReceivedFromNode){
+        return minimumRelationSentTo(x->rightSentTo);
     }
-    y = x->father;
-    while((y!=&nullRelationSentToOrReceivedFromNode) && (x == y->right)){
+    y = x->fatherSentTo;
+    while((y!=&nullRelationSentToOrReceivedFromNode) && (x == y->rightSentTo)){
         x = y;
-        y = y->father;
+        y = y->fatherSentTo;
     }
     return y;
 }
 
-void deleteRelationSentToOrReceivedFrom(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head){
+void deleteRelationSentTo(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head){
     struct relationSentToOrReceivedFrom * y;
     struct relationSentToOrReceivedFrom * x;
-    if((z->left == &nullRelationSentToOrReceivedFromNode) || (z->right == &nullRelationSentToOrReceivedFromNode)){
+    if((z->leftSentTo == &nullRelationSentToOrReceivedFromNode) || (z->rightSentTo == &nullRelationSentToOrReceivedFromNode)){
         y = z;
     }
     else{
-        y = successorRelationSentToOrReceivedFrom(z);
+        y = successorRelationSentTo(z);
     }
-    if(y->left != &nullRelationSentToOrReceivedFromNode){
-        x = y->left;
+    if(y->leftSentTo != &nullRelationSentToOrReceivedFromNode){
+        x = y->leftSentTo;
     }
     else{
-        x = y->right;
+        x = y->rightSentTo;
     }
-    x->father = y->father;
-    if(y->father == &nullRelationSentToOrReceivedFromNode){
+    x->fatherSentTo = y->fatherSentTo;
+    if(y->fatherSentTo == &nullRelationSentToOrReceivedFromNode){
         *head = x;
     }
-    else if(y == y->father->left){
-        y->father->left = x;
+    else if(y == y->fatherSentTo->leftSentTo){
+        y->fatherSentTo->leftSentTo = x;
     }
     else{
-        y->father->right = x;
+        y->fatherSentTo->rightSentTo = x;
     }
     if (y != z){
-        z->externalRelationTracker = y->externalRelationTracker;
-        z->internalEntity = y->internalEntity;
+        int oldColor = y->nodeColorSentTo;
+        y->nodeColorSentTo = z->nodeColorSentTo;
+
+        if(z == *head){
+            *head = y;
+        }
+        else {
+            if (z->fatherSentTo->leftSentTo == z) {
+                z->fatherSentTo->leftSentTo = y;
+            } else {
+                z->fatherSentTo->rightSentTo = y;
+            }
+        }
+        z->leftSentTo->fatherSentTo = y;
+        z->rightSentTo->fatherSentTo = y;
+
+        y->fatherSentTo = z->fatherSentTo;
+        y->leftSentTo = z->leftSentTo;
+        y->rightSentTo = z->rightSentTo;
+        if(oldColor == BLACK){
+            deleteRelationSentTo_FIXUP(x, head);
+        }
+        return;
     }
-    if(y->nodeColor == BLACK){
-        deleteRelationSentToOrReceivedFrom_FIXUP(x, head);
+    if(y->nodeColorSentTo == BLACK){
+        deleteRelationSentTo_FIXUP(x, head);
     }
-    free(y);
 }
 
-void deleteRelationSentToOrReceivedFrom_FIXUP(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head){
+void deleteRelationSentTo_FIXUP(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head){
     struct relationSentToOrReceivedFrom * w;
 
-    if((x->nodeColor == RED) || (x->father == &nullRelationSentToOrReceivedFromNode)){
-        x->nodeColor = BLACK;
+    if((x->nodeColorSentTo == RED) || (x->fatherSentTo == &nullRelationSentToOrReceivedFromNode)){
+        x->nodeColorSentTo = BLACK;
     }
-    else if(x == x->father->left){
-        w = x->father->right;
-        if(w->nodeColor == RED){
-            w->nodeColor = BLACK;
-            x->father->nodeColor = RED;
-            leftRotateRelationSentToOrReceivedFrom(x->father, head);
-            w = x->father->right;
+    else if(x == x->fatherSentTo->leftSentTo){
+        w = x->fatherSentTo->rightSentTo;
+        if(w->nodeColorSentTo == RED){
+            w->nodeColorSentTo = BLACK;
+            x->fatherSentTo->nodeColorSentTo = RED;
+            leftRotateRelationSentTo(x->fatherSentTo, head);
+            w = x->fatherSentTo->rightSentTo;
         }
-        if((w->left->nodeColor == BLACK) && (w->right->nodeColor == BLACK)){
-            w->nodeColor = RED;
-            deleteRelationSentToOrReceivedFrom_FIXUP(x->father, head);
+        if((w->leftSentTo->nodeColorSentTo == BLACK) && (w->rightSentTo->nodeColorSentTo == BLACK)){
+            w->nodeColorSentTo = RED;
+            deleteRelationSentTo_FIXUP(x->fatherSentTo, head);
         }
         else{
-            if(w->right->nodeColor == BLACK){
-                w->left->nodeColor = BLACK;
-                w->nodeColor = RED;
-                rightRotateRelationSentToOrReceivedFrom(w,head);
-                w = x->father->right;
+            if(w->rightSentTo->nodeColorSentTo == BLACK){
+                w->leftSentTo->nodeColorSentTo = BLACK;
+                w->nodeColorSentTo = RED;
+                rightRotateRelationSentTo(w,head);
+                w = x->fatherSentTo->rightSentTo;
             }
-            w->nodeColor = x->father->nodeColor;
-            x->father->nodeColor = BLACK;
-            w->right->nodeColor = BLACK;
-            rightRotateRelationSentToOrReceivedFrom(x->father, head);
+            w->nodeColorSentTo = x->fatherSentTo->nodeColorSentTo;
+            x->fatherSentTo->nodeColorSentTo = BLACK;
+            w->rightSentTo->nodeColorSentTo = BLACK;
+            rightRotateRelationSentTo(x->fatherSentTo, head);
         }
     }
     else{
-        w = x->father->left;
-        if(w->nodeColor == RED){
-            w->nodeColor = BLACK;
-            x->father->nodeColor = RED;
-            rightRotateRelationSentToOrReceivedFrom(x->father,head);
-            w = x->father->left;
+        w = x->fatherSentTo->leftSentTo;
+        if(w->nodeColorSentTo == RED){
+            w->nodeColorSentTo = BLACK;
+            x->fatherSentTo->nodeColorSentTo = RED;
+            rightRotateRelationSentTo(x->fatherSentTo,head);
+            w = x->fatherSentTo->leftSentTo;
         }
-        if((w->right->nodeColor == BLACK) && (w->left->nodeColor == BLACK)){
-            w->nodeColor = RED;
-            deleteRelationSentToOrReceivedFrom_FIXUP(x->father,head);
+        if((w->rightSentTo->nodeColorSentTo == BLACK) && (w->leftSentTo->nodeColorSentTo == BLACK)){
+            w->nodeColorSentTo = RED;
+            deleteRelationSentTo_FIXUP(x->fatherSentTo,head);
         }
         else{
-            if(w->left->nodeColor == BLACK){
-                w->right->nodeColor = BLACK;
-                w->nodeColor = RED;
-                leftRotateRelationSentToOrReceivedFrom(w, head);
-                w = x->father->left;
+            if(w->leftSentTo->nodeColorSentTo == BLACK){
+                w->rightSentTo->nodeColorSentTo = BLACK;
+                w->nodeColorSentTo = RED;
+                leftRotateRelationSentTo(w, head);
+                w = x->fatherSentTo->leftSentTo;
             }
-            w->nodeColor = x->father->nodeColor;
-            x->father->nodeColor = BLACK;
-            w->left->nodeColor = BLACK;
-            rightRotateRelationSentToOrReceivedFrom(x->father, head);
+            w->nodeColorSentTo = x->fatherSentTo->nodeColorSentTo;
+            x->fatherSentTo->nodeColorSentTo = BLACK;
+            w->leftSentTo->nodeColorSentTo = BLACK;
+            rightRotateRelationSentTo(x->fatherSentTo, head);
         }
     }
 }
 
+//RECEIVED
+struct relationSentToOrReceivedFrom * searchRelationReceivedFrom(char * origId, struct relationSentToOrReceivedFrom * head){
+    struct relationSentToOrReceivedFrom *result = head;
+
+    while (result != &nullRelationSentToOrReceivedFromNode) {
+        int cmp = strcmp(result->origRelationTracker->entity->name, origId);
+        if (cmp == 0) {
+            //printf("relationSentToOrReceivedFrom referred to entity %s found\n", origId);
+            return result;
+        } else if (cmp > 0) {
+            result = result->leftReceivedFrom;
+        } else {
+            result = result->rightReceivedFrom;
+        }
+    }
+    //printf("relationSentToOrReceivedFrom referred to entity %s not found\n", origId);
+    return result;
+}
+
+void leftRotateRelationReceivedFrom(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head){
+    struct relationSentToOrReceivedFrom * y = x->rightSentTo;
+    x->rightReceivedFrom = y->leftReceivedFrom;
+    if(y->leftReceivedFrom != &nullRelationSentToOrReceivedFromNode){
+        y->leftReceivedFrom->fatherReceivedFrom = x;
+    }
+    y->fatherReceivedFrom = x->fatherReceivedFrom;
+    if(x->fatherReceivedFrom == &nullRelationSentToOrReceivedFromNode){
+        *head = y;
+    }
+    else if(x == x->fatherReceivedFrom->leftReceivedFrom){
+        x->fatherReceivedFrom->leftReceivedFrom = y;
+    }
+    else{
+        x->fatherReceivedFrom->rightReceivedFrom = y;
+    }
+    y->leftReceivedFrom = x;
+    x->fatherReceivedFrom = y;
+}
+
+void rightRotateRelationReceivedFrom(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head){
+    struct relationSentToOrReceivedFrom * y = x->leftReceivedFrom;
+    x->leftReceivedFrom = y->rightReceivedFrom;
+    if(y->rightReceivedFrom != &nullRelationSentToOrReceivedFromNode){
+        y->rightReceivedFrom->rightReceivedFrom = x;
+    }
+    y->fatherReceivedFrom = x->fatherReceivedFrom;
+    if(x->fatherReceivedFrom == &nullRelationSentToOrReceivedFromNode){
+        *head = y;
+    }
+    else if(x == x->fatherReceivedFrom->rightReceivedFrom){
+        x->fatherReceivedFrom->rightReceivedFrom = y;
+    }
+    else{
+        x->fatherReceivedFrom->leftReceivedFrom = y;
+    }
+    y->rightReceivedFrom = x;
+    x->fatherReceivedFrom = y;
+}
+
+void insertRelationReceivedFrom(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head){
+    struct relationSentToOrReceivedFrom * y = &nullRelationSentToOrReceivedFromNode;
+    struct relationSentToOrReceivedFrom * x = *head;
+    while(x != &nullRelationSentToOrReceivedFromNode){
+        y = x;
+        if(strcmp(z->origRelationTracker->entity->name, x->origRelationTracker->entity->name) < 0){
+            x = x->leftReceivedFrom;
+        }
+        else{
+            x = x->rightReceivedFrom;
+        }
+    }
+    z->fatherReceivedFrom = y;
+    if(y == &nullRelationSentToOrReceivedFromNode){
+        *head = z;
+    }
+    else if(strcmp(z->origRelationTracker->entity->name, y->origRelationTracker->entity->name) < 0){
+        y->leftReceivedFrom = z;
+    }
+    else{
+        y->rightReceivedFrom = z;
+    }
+    z->leftReceivedFrom = &nullRelationSentToOrReceivedFromNode;
+    z->rightReceivedFrom = &nullRelationSentToOrReceivedFromNode;
+    z->nodeColorReceivedFrom = RED;
+    insertRelationReceivedFrom_FIXUP(z, head);
+}
+
+void insertRelationReceivedFrom_FIXUP(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head){
+    struct relationSentToOrReceivedFrom * y;
+    struct relationSentToOrReceivedFrom * x;
+    if(z == *head){
+        z->nodeColorReceivedFrom = BLACK;
+    }
+    else{
+        x = z->fatherReceivedFrom;
+        if(x->nodeColorReceivedFrom == RED){
+            if( x == x->fatherReceivedFrom->leftReceivedFrom){
+                y = x->fatherReceivedFrom->rightReceivedFrom;
+                if(y->nodeColorReceivedFrom == RED){
+                    x->nodeColorReceivedFrom = BLACK;
+                    y->nodeColorReceivedFrom = BLACK;
+                    x->fatherReceivedFrom->nodeColorReceivedFrom = RED;
+                    insertRelationReceivedFrom_FIXUP(x->fatherReceivedFrom, head);
+                }
+                else{
+                    if(z == x->rightReceivedFrom){
+                        z = x;
+                        leftRotateRelationReceivedFrom(z, head);
+                        x = z->fatherReceivedFrom;
+                    }
+                    x->nodeColorReceivedFrom = BLACK;
+                    x->fatherReceivedFrom->nodeColorReceivedFrom = RED;
+                    rightRotateRelationReceivedFrom(x->fatherReceivedFrom, head);
+                }
+            }
+            else{
+                y = x->fatherReceivedFrom->leftReceivedFrom;
+                if(y->nodeColorReceivedFrom == RED){
+                    x->nodeColorReceivedFrom = BLACK;
+                    y->nodeColorReceivedFrom = BLACK;
+                    x->fatherReceivedFrom->nodeColorReceivedFrom = RED;
+                    insertRelationReceivedFrom_FIXUP(x->fatherReceivedFrom, head);
+                }
+                else{
+                    if(z == x->leftReceivedFrom){
+                        z = x;
+                        rightRotateRelationReceivedFrom(z, head);
+                        x = z->fatherReceivedFrom;
+                    }
+                    x->nodeColorReceivedFrom = BLACK;
+                    x->fatherReceivedFrom->nodeColorReceivedFrom = RED;
+                    leftRotateRelationReceivedFrom(x->fatherReceivedFrom, head);
+                }
+            }
+        }
+    }
+}
+
+struct relationSentToOrReceivedFrom * minimumRelationReceivedFrom(struct relationSentToOrReceivedFrom * x){
+    while (x->leftReceivedFrom != &nullRelationSentToOrReceivedFromNode){
+        x = x->leftReceivedFrom;
+    }
+    return x;
+}
+
+struct relationSentToOrReceivedFrom * successorRelationReceivedFrom(struct relationSentToOrReceivedFrom * x){
+    struct relationSentToOrReceivedFrom * y;
+    if(x->rightReceivedFrom != &nullRelationSentToOrReceivedFromNode){
+        return minimumRelationReceivedFrom(x->rightReceivedFrom);
+    }
+    y = x->fatherReceivedFrom;
+    while((y!=&nullRelationSentToOrReceivedFromNode) && (x == y->rightReceivedFrom)){
+        x = y;
+        y = y->fatherReceivedFrom;
+    }
+    return y;
+}
+
+void deleteRelationReceivedFrom(struct relationSentToOrReceivedFrom * z, struct relationSentToOrReceivedFrom ** head){
+    struct relationSentToOrReceivedFrom * y;
+    struct relationSentToOrReceivedFrom * x;
+    if((z->leftReceivedFrom == &nullRelationSentToOrReceivedFromNode) || (z->rightReceivedFrom == &nullRelationSentToOrReceivedFromNode)){
+        y = z;
+    }
+    else{
+        y = successorRelationReceivedFrom(z);
+    }
+    if(y->leftReceivedFrom != &nullRelationSentToOrReceivedFromNode){
+        x = y->leftReceivedFrom;
+    }
+    else{
+        x = y->rightReceivedFrom;
+    }
+    x->fatherReceivedFrom = y->fatherReceivedFrom;
+    if(y->fatherReceivedFrom == &nullRelationSentToOrReceivedFromNode){
+        *head = x;
+    }
+    else if(y == y->fatherReceivedFrom->leftReceivedFrom){
+        y->fatherReceivedFrom->leftReceivedFrom = x;
+    }
+    else{
+        y->fatherReceivedFrom->rightReceivedFrom = x;
+    }
+    if (y != z){
+        int oldColor = y->nodeColorReceivedFrom;
+        y->nodeColorReceivedFrom = z->nodeColorReceivedFrom;
+
+        if(z == *head){
+            *head = y;
+        }
+        else {
+            if (z->fatherReceivedFrom->leftReceivedFrom == z) {
+                z->fatherReceivedFrom->leftReceivedFrom = y;
+            } else {
+                z->fatherReceivedFrom->rightReceivedFrom = y;
+            }
+        }
+        z->leftReceivedFrom->fatherReceivedFrom = y;
+        z->rightReceivedFrom->fatherReceivedFrom = y;
+
+        y->fatherReceivedFrom = z->fatherReceivedFrom;
+        y->leftReceivedFrom = z->leftReceivedFrom;
+        y->rightReceivedFrom = z->rightReceivedFrom;
+
+        if(oldColor == BLACK){
+            deleteRelationReceivedFrom_FIXUP(x, head);
+        }
+        return;
+    }
+    if(y->nodeColorReceivedFrom == BLACK){
+        deleteRelationReceivedFrom_FIXUP(x, head);
+    }
+}
+
+void deleteRelationReceivedFrom_FIXUP(struct relationSentToOrReceivedFrom * x, struct relationSentToOrReceivedFrom ** head){
+    struct relationSentToOrReceivedFrom * w;
+
+    if((x->nodeColorReceivedFrom == RED) || (x->fatherReceivedFrom == &nullRelationSentToOrReceivedFromNode)){
+        x->nodeColorReceivedFrom = BLACK;
+    }
+    else if(x == x->fatherReceivedFrom->leftReceivedFrom){
+        w = x->fatherReceivedFrom->rightReceivedFrom;
+        if(w->nodeColorReceivedFrom == RED){
+            w->nodeColorReceivedFrom = BLACK;
+            x->fatherReceivedFrom->nodeColorReceivedFrom = RED;
+            leftRotateRelationReceivedFrom(x->fatherReceivedFrom, head);
+            w = x->fatherReceivedFrom->rightReceivedFrom;
+        }
+        if((w->leftReceivedFrom->nodeColorReceivedFrom == BLACK) && (w->rightReceivedFrom->nodeColorReceivedFrom == BLACK)){
+            w->nodeColorReceivedFrom = RED;
+            deleteRelationReceivedFrom_FIXUP(x->fatherReceivedFrom, head);
+        }
+        else{
+            if(w->rightReceivedFrom->nodeColorReceivedFrom == BLACK){
+                w->leftReceivedFrom->nodeColorReceivedFrom = BLACK;
+                w->nodeColorReceivedFrom = RED;
+                rightRotateRelationReceivedFrom(w,head);
+                w = x->fatherReceivedFrom->rightReceivedFrom;
+            }
+            w->nodeColorReceivedFrom = x->fatherReceivedFrom->nodeColorReceivedFrom;
+            x->fatherReceivedFrom->nodeColorReceivedFrom = BLACK;
+            w->rightReceivedFrom->nodeColorReceivedFrom = BLACK;
+            rightRotateRelationReceivedFrom(x->fatherReceivedFrom, head);
+        }
+    }
+    else{
+        w = x->fatherReceivedFrom->leftReceivedFrom;
+        if(w->nodeColorReceivedFrom == RED){
+            w->nodeColorReceivedFrom = BLACK;
+            x->fatherReceivedFrom->nodeColorReceivedFrom = RED;
+            rightRotateRelationReceivedFrom(x->fatherReceivedFrom,head);
+            w = x->fatherReceivedFrom->leftReceivedFrom;
+        }
+        if((w->rightReceivedFrom->nodeColorReceivedFrom == BLACK) && (w->leftReceivedFrom->nodeColorReceivedFrom == BLACK)){
+            w->nodeColorReceivedFrom = RED;
+            deleteRelationReceivedFrom_FIXUP(x->fatherReceivedFrom,head);
+        }
+        else{
+            if(w->leftReceivedFrom->nodeColorReceivedFrom == BLACK){
+                w->rightReceivedFrom->nodeColorReceivedFrom = BLACK;
+                w->nodeColorReceivedFrom = RED;
+                leftRotateRelationReceivedFrom(w, head);
+                w = x->fatherReceivedFrom->leftReceivedFrom;
+            }
+            w->nodeColorReceivedFrom = x->fatherReceivedFrom->nodeColorReceivedFrom;
+            x->fatherReceivedFrom->nodeColorReceivedFrom = BLACK;
+            w->leftReceivedFrom->nodeColorReceivedFrom = BLACK;
+            rightRotateRelationReceivedFrom(x->fatherReceivedFrom, head);
+        }
+    }
+}
 
 /* main */
 char input[300];
@@ -1419,9 +1771,15 @@ void addent(){
     idEnt[i] = '\0';
     idEntLength = i+1;
 
+    //printf("\n********************************* ADDENT *********************************\n");
     //printf("idEnt: %s - hash: %lu\n", idEnt, hashFunction(idEnt));
 
     insertEntityHashTable(idEnt);
+
+    //printf("**************************************************************************\n\n\n");
+    //fullReport();
+
+
 
     //O(1):  aggiunge entity all'hash table delle entities se non esiste già
     //
@@ -1458,6 +1816,7 @@ void addrel(){
     idRel[i] = '\0';
     idRelLenght = i+1;
 
+    //printf("\n********************************* ADDREL *********************************\n");
     //printf("idOrig: %s \n", idOrig);
     //printf("idDest: %s \n", idDest);
     //printf("idRel: %s \n", idRel);
@@ -1493,9 +1852,9 @@ void addrel(){
     struct relationTracker_1 * relTrackerOrig = searchRelationTracker_1(idRel, entityOrig);
     if (relTrackerOrig == &nullRelationTrackerNode_1) {
         relTrackerOrig = malloc(sizeof(struct relationTracker_1));
-        //relTrackerOrig->leftNodeEntityTree = &nullRelationTrackerNode_1;
-        //relTrackerOrig->rightNodeEntityTree = &nullRelationTrackerNode_1;
-        //relTrackerOrig->fatherEntityTree = &nullRelationTrackerNode_1;
+        relTrackerOrig->leftNodeEntityTree = &nullRelationTrackerNode_1;
+        relTrackerOrig->rightNodeEntityTree = &nullRelationTrackerNode_1;
+        relTrackerOrig->fatherEntityTree = &nullRelationTrackerNode_1;
         relTrackerOrig->sentToTreeHead = &nullRelationSentToOrReceivedFromNode;
         relTrackerOrig->receivedFromTreeHead = &nullRelationSentToOrReceivedFromNode;
         relTrackerOrig->entity = entityOrig;
@@ -1514,7 +1873,7 @@ void addrel(){
     }
 
     struct relationTracker_1 *relTrackerDest;
-    char firstTimeInsert = 0;
+    int firstTimeInsert = 0;
     if(entityDest == entityOrig){
         relTrackerDest = relTrackerOrig;
         //printf("entity orig and dest is the same (%s)\n", idOrig);
@@ -1545,50 +1904,44 @@ void addrel(){
         }
     }
 
-    struct relationSentToOrReceivedFrom *relationSentTo = searchRelationSentToOrReceivedFrom(idDest, relTrackerOrig->sentToTreeHead);
-    if(relationSentTo == &nullRelationSentToOrReceivedFromNode) {
-        //printf("creating new relationSentTo\n");
-        relationSentTo = malloc(sizeof(struct relationSentToOrReceivedFrom));
-        relationSentTo->internalEntity = entityOrig;
-        relationSentTo->externalRelationTracker = relTrackerDest;
-        //relationSentTo->left = &nullRelationSentToOrReceivedFromNode;
-        //relationSentTo->right = &nullRelationSentToOrReceivedFromNode;
-        //relationSentTo->father = &nullRelationSentToOrReceivedFromNode;
+    struct relationSentToOrReceivedFrom *relationSentToOrReceivedFrom = searchRelationSentTo(idDest, relTrackerOrig->sentToTreeHead);
+    if(relationSentToOrReceivedFrom == &nullRelationSentToOrReceivedFromNode) {
+        //printf("creating new relationSentToOrReceivedFrom\n");
+        relationSentToOrReceivedFrom = malloc(sizeof(struct relationSentToOrReceivedFrom));
+        relationSentToOrReceivedFrom->origRelationTracker = relTrackerOrig;
+        relationSentToOrReceivedFrom->destRelationTracker = relTrackerDest;
     }
     else{
         //printf("relation already exists\n");
         return;
     }
-    insertRelationSentToOrReceivedFrom(relationSentTo, &(relTrackerOrig->sentToTreeHead));
-    //printf("added relationSentTo to the orig (%s)\n", idOrig);
-
-    //printf("creating new relationSentTo\n");
-    struct relationSentToOrReceivedFrom *relationReceivedFrom = malloc(sizeof(struct relationSentToOrReceivedFrom));
-    relationReceivedFrom->internalEntity = entityDest;
-    relationReceivedFrom->externalRelationTracker = relTrackerOrig;
-    //relationReceivedFrom->left = &nullRelationSentToOrReceivedFromNode;
-    //relationReceivedFrom->right = &nullRelationSentToOrReceivedFromNode;
-    //relationReceivedFrom->father = &nullRelationSentToOrReceivedFromNode;
-
-    insertRelationSentToOrReceivedFrom(relationReceivedFrom, &(relTrackerDest->receivedFromTreeHead));
-    //printf("added relationReceivedFrom to the dest (%s)\n", idDest);
-
+    insertRelationSentTo(relationSentToOrReceivedFrom, &(relTrackerOrig->sentToTreeHead));
+    //printf("added relationSentToOrReceivedFrom to the orig (%s)\n", relationSentToOrReceivedFrom->origRelationTracker->entity->name);
+    insertRelationReceivedFrom(relationSentToOrReceivedFrom, &(relTrackerDest->receivedFromTreeHead));
+    //printf("added relationReceivedFromOrReceivedFrom to the dest (%s)\n", relationSentToOrReceivedFrom->destRelationTracker->entity->name);
     if(firstTimeInsert == 0) {
+        //printf("number of relation received of (%s) was (%d)\n", relationSentToOrReceivedFrom->destRelationTracker->entity->name, relationSentToOrReceivedFrom->destRelationTracker->numberOfRelationReceived);
         deleteRelationTracker_2(relation, relTrackerDest->relationTracker_2);
         relTrackerDest->numberOfRelationReceived++;
         relTrackerDest->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
         relTrackerDest->relationTracker_2->relationTracker_1 = relTrackerDest;
-        //relTrackerDest->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
-        //relTrackerDest->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
-        //relTrackerDest->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
+        relTrackerDest->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
+        relTrackerDest->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
+        relTrackerDest->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
         insertRelationTracker_2(relation, relTrackerDest->relationTracker_2);
         //printf("incremented numberOfRelationReceived of relation %s of entity dest %s\n", idRel, idDest);
+        //printf("number of relation received of (%s) was (%d)\n", relationSentToOrReceivedFrom->destRelationTracker->entity->name, relationSentToOrReceivedFrom->destRelationTracker->numberOfRelationReceived);
+    }
+    else{
+        //printf("relationTracker was created already with numberOfRelationReceived=1\n");
     }
     numberOfTotalAddrel++;
 
-
-    //printf("\n\n\n");
+    //printf("**************************************************************************\n\n\n");
     //fullReport();
+
+
+
 
     //O(1) + O(1):         cerca se le entity origin e receiver esistono nell'hash table delle entities,
     //                     se almeno una non esiste non fa nulla
@@ -1611,97 +1964,95 @@ void deleteAllRelationTrackerRecursive_1(struct relationTracker_1 * currentRelat
     if(currentRelationTracker != &nullRelationTrackerNode_1){
         deleteAllRelationTrackerRecursive_1(currentRelationTracker->leftNodeEntityTree);
 
-        //printf("\tanalizing relationTracker: %s\n", currentRelationTracker->relation->name);
+        //printf("\tanalizing relationTracker_1: %s\n", currentRelationTracker->relation->name);
         //printf("\tdeleting Sent to:\n");
         deleteAllRelationSentToRecursive(currentRelationTracker->sentToTreeHead);
         //printf("\tdeleting Received From:\n");
         deleteAllRelationReceivedFromRecursive(currentRelationTracker->receivedFromTreeHead);
-        //free(deleteRelationTracker_2(currentRelationTracker->relation, currentRelationTracker->relationTracker_2));
-        //printf("\tdeleting relationTracker_2:\n");
-        deleteRelationTracker_2(currentRelationTracker->relation, currentRelationTracker->relationTracker_2);
 
         deleteAllRelationTrackerRecursive_1(currentRelationTracker->rightNodeEntityTree);
 
+        //printf("\tfreeing relationTracker_2(%s)\n", currentRelationTracker->relationTracker_2->relationTracker_1->relation->name);
+        deleteRelationTracker_2(currentRelationTracker->relation, currentRelationTracker->relationTracker_2);
+        //printf("\tfreeing relationTracker_1(%s)\n", currentRelationTracker->relation->name);
         free(currentRelationTracker);
     }
 }
-void deleteAllRelationSentToRecursive(struct relationSentToOrReceivedFrom * currentRelationSentTo){
+void deleteAllRelationSentToRecursive(struct relationSentToOrReceivedFrom * currentRelationSentTo){//TODO RISCRIVI QUESTA FUNZIONE
     if(currentRelationSentTo != &nullRelationSentToOrReceivedFromNode){
-        deleteAllRelationSentToRecursive(currentRelationSentTo->left);
+        deleteAllRelationSentToRecursive(currentRelationSentTo->leftSentTo);
 
-        //printf("\t\t%s->%s\n", currentRelationSentTo->internalEntity->name, currentRelationSentTo->externalRelationTracker->entity->name);
-        //printf("\t\t\tsearching relationReceivedFromExternalEntity...\n");
-        struct relationSentToOrReceivedFrom * relationReceivedFromExternalEntity = searchRelationSentToOrReceivedFrom(
-                currentRelationSentTo->internalEntity->name,
-                currentRelationSentTo->externalRelationTracker->receivedFromTreeHead
+        //printf("\t\tanalizing %s->%s\n", currentRelationSentTo->origRelationTracker->entity->name, currentRelationSentTo->destRelationTracker->entity->name);
+
+        //printf("\t\t\tnumber of relation received of (%s) was (%d)\n", currentRelationSentTo->destRelationTracker->entity->name, currentRelationSentTo->destRelationTracker->numberOfRelationReceived);
+        deleteRelationTracker_2(currentRelationSentTo->destRelationTracker->relation,
+                                currentRelationSentTo->destRelationTracker->relationTracker_2);
+        currentRelationSentTo->destRelationTracker->numberOfRelationReceived--;
+        currentRelationSentTo->destRelationTracker->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
+        currentRelationSentTo->destRelationTracker->relationTracker_2->relationTracker_1 = currentRelationSentTo->destRelationTracker;
+        //currentRelationSentTo->destRelationTracker->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
+        //currentRelationSentTo->destRelationTracker->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
+        //currentRelationSentTo->destRelationTracker->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
+        insertRelationTracker_2(currentRelationSentTo->destRelationTracker->relation,
+                                currentRelationSentTo->destRelationTracker->relationTracker_2);
+        //printf("\t\t\tdecreased numberOfRelationReceived\n");
+        //printf("\t\t\tnumber of relation received of (%s) is now (%d)\n", currentRelationSentTo->destRelationTracker->entity->name, currentRelationSentTo->destRelationTracker->numberOfRelationReceived);
+
+
+        //printf("\t\t\tdeleting from the destRelationTracker(%s)->receivedFrom the relation (%s->%s), %u\n",
+        //       currentRelationSentTo->destRelationTracker->entity->name,
+        //       currentRelationSentTo->origRelationTracker->entity->name, currentRelationSentTo->destRelationTracker->entity->name,
+        //       currentRelationSentTo);
+        deleteRelationReceivedFrom(
+                currentRelationSentTo,
+                &(currentRelationSentTo->destRelationTracker->receivedFromTreeHead)
         );
-        //free(deleteRelationSentToOrReceivedFrom(
-        //        relationReceivedFromExternalEntity,
-        //        &(currentRelationSentTo->externalRelationTracker->receivedFromTreeHead)
-        //));
-        //printf("\t\t\tdelentig relationReceivedFromExternalEntity...\n");
-        deleteRelationSentToOrReceivedFrom(
-                relationReceivedFromExternalEntity,
-                &(currentRelationSentTo->externalRelationTracker->receivedFromTreeHead)
-        );
-        //printf("\t\t\tdeleted from the external entity (%s) the relationReceivedFrom\n", currentRelationSentTo->externalRelationTracker->entity->name);
 
-        //free(deleteRelationTracker_2(currentRelationSentTo->externalRelationTracker->relation, currentRelationSentTo->externalRelationTracker->relationTracker_2));
-        deleteRelationTracker_2(currentRelationSentTo->externalRelationTracker->relation,
-                                currentRelationSentTo->externalRelationTracker->relationTracker_2);
-        currentRelationSentTo->externalRelationTracker->numberOfRelationReceived--;
-        currentRelationSentTo->externalRelationTracker->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
-        currentRelationSentTo->externalRelationTracker->relationTracker_2->relationTracker_1 = currentRelationSentTo->externalRelationTracker;
-        //currentRelationSentTo->externalRelationTracker->relationTracker_2->rightNodeRelationTree = &nullRelationTrackerNode_2;
-        //currentRelationSentTo->externalRelationTracker->relationTracker_2->leftNodeRelationTree = &nullRelationTrackerNode_2;
-        //currentRelationSentTo->externalRelationTracker->relationTracker_2->fatherRelationTree = &nullRelationTrackerNode_2;
-        insertRelationTracker_2(currentRelationSentTo->externalRelationTracker->relation,
-                                currentRelationSentTo->externalRelationTracker->relationTracker_2);
-        //printf("\t\t\tdiminished the number of relation received from the relationTracker of the dest (%s)\n", currentRelationSentTo->externalRelationTracker->entity->name);
-
-
-        if(currentRelationSentTo->externalRelationTracker->sentToTreeHead == &nullRelationSentToOrReceivedFromNode && currentRelationSentTo->externalRelationTracker->receivedFromTreeHead ==&nullRelationSentToOrReceivedFromNode){
-            //printf("\t\t\tthe number of relation received from or sent is zero, deleting the relationTracker\n");
-            deleteRelationTracker_2(currentRelationSentTo->externalRelationTracker->relation, currentRelationSentTo->externalRelationTracker->relationTracker_2);
-            deleteRelationTracker_1(currentRelationSentTo->externalRelationTracker->entity, currentRelationSentTo->externalRelationTracker);
+        if (currentRelationSentTo->destRelationTracker->sentToTreeHead == &nullRelationSentToOrReceivedFromNode &&
+            currentRelationSentTo->destRelationTracker->receivedFromTreeHead == &nullRelationSentToOrReceivedFromNode) {
+            //printf("\t\t\tdeleting the relationTracker(_1 and _2) of the dest, it has no sentTo or receivedFrom relations\n");
+            deleteRelationTracker_2(currentRelationSentTo->destRelationTracker->relation,
+                                    currentRelationSentTo->destRelationTracker->relationTracker_2);
+            deleteRelationTracker_1(currentRelationSentTo->destRelationTracker->entity,
+                                    currentRelationSentTo->destRelationTracker);
         }
 
         numberOfTotalDelrel++;
 
-        deleteAllRelationSentToRecursive(currentRelationSentTo->right);
+        deleteAllRelationSentToRecursive(currentRelationSentTo->rightSentTo);
 
-        free(currentRelationSentTo);
+        //free(currentRelationSentTo);
     }
 }
-void deleteAllRelationReceivedFromRecursive(struct relationSentToOrReceivedFrom * currentRelationReceivedFrom){
+void deleteAllRelationReceivedFromRecursive(struct relationSentToOrReceivedFrom * currentRelationReceivedFrom){ //TODO RISCRIVI QUESTA FUNZIONE
+    //N.B. in questa funzione non può succedere che si stia analizzando una relazione ricorsiva,
+    //     sono già state eliminate tutte nella deleteAllRelationSentToRecursive
+
     if(currentRelationReceivedFrom != &nullRelationSentToOrReceivedFromNode){
-        deleteAllRelationReceivedFromRecursive(currentRelationReceivedFrom->left);
+        deleteAllRelationReceivedFromRecursive(currentRelationReceivedFrom->leftReceivedFrom);
 
-        //printf("\t\t%s<-%s\n", currentRelationReceivedFrom->internalEntity->name, currentRelationReceivedFrom->externalRelationTracker->entity->name);
-        //printf("\t\t\tsearching relationSentToExternalEntity...\n");
-        struct relationSentToOrReceivedFrom * relationSentToExternalEntity = searchRelationSentToOrReceivedFrom(
-                currentRelationReceivedFrom->internalEntity->name,
-                currentRelationReceivedFrom->externalRelationTracker->sentToTreeHead
+        //printf("\t\tanalizing %s<-%s\n", currentRelationReceivedFrom->destRelationTracker->entity->name, currentRelationReceivedFrom->origRelationTracker->entity->name);
+        //printf("\t\t\tdeleting from the origRelationTracker(%s)->sentToTreeHead the relation (%s->%s), %u\n",
+        //        currentRelationReceivedFrom->origRelationTracker->entity->name,
+        //        currentRelationReceivedFrom->origRelationTracker->entity->name, currentRelationReceivedFrom->destRelationTracker->entity->name,
+        //        currentRelationReceivedFrom);
+        deleteRelationSentTo(
+                currentRelationReceivedFrom,
+                &(currentRelationReceivedFrom->origRelationTracker->sentToTreeHead)
         );
-        //free(deleteRelationSentToOrReceivedFrom(
-        //        relationSentToExternalEntity,
-        //        &(currentRelationReceivedFrom->externalRelationTracker->sentToTreeHead)
-        //));
-        //printf("\t\t\tdelentig relationSentToExternalEntity...\n");
-        deleteRelationSentToOrReceivedFrom(
-                relationSentToExternalEntity,
-                &(currentRelationReceivedFrom->externalRelationTracker->sentToTreeHead)
-        );
-        //printf("\t\t\tdeleted from the external entity (%s) the relationSentTo\n", currentRelationReceivedFrom->externalRelationTracker->entity->name);
 
-        if(currentRelationReceivedFrom->externalRelationTracker->sentToTreeHead == &nullRelationSentToOrReceivedFromNode && currentRelationReceivedFrom->externalRelationTracker->receivedFromTreeHead ==&nullRelationSentToOrReceivedFromNode){
-            deleteRelationTracker_2(currentRelationReceivedFrom->externalRelationTracker->relation, currentRelationReceivedFrom->externalRelationTracker->relationTracker_2);
-            deleteRelationTracker_1(currentRelationReceivedFrom->externalRelationTracker->entity, currentRelationReceivedFrom->externalRelationTracker);
+        if(currentRelationReceivedFrom->origRelationTracker->sentToTreeHead == &nullRelationSentToOrReceivedFromNode &&
+            currentRelationReceivedFrom->origRelationTracker->receivedFromTreeHead == &nullRelationSentToOrReceivedFromNode){
+            //printf("\t\t\t deleting the relationTracker(_1 and _2) of the orig, it has no sentTo or receivedFrom relations");
+            deleteRelationTracker_2(currentRelationReceivedFrom->origRelationTracker->relation,
+                                    currentRelationReceivedFrom->origRelationTracker->relationTracker_2);
+            deleteRelationTracker_1(currentRelationReceivedFrom->origRelationTracker->entity,
+                                    currentRelationReceivedFrom->origRelationTracker);
         }
 
         numberOfTotalDelrel++;
 
-        deleteAllRelationReceivedFromRecursive(currentRelationReceivedFrom->right);
+        deleteAllRelationReceivedFromRecursive(currentRelationReceivedFrom->rightReceivedFrom);
 
         free(currentRelationReceivedFrom);
     }
@@ -1721,7 +2072,7 @@ void delent(){
     idEnt[i] = '\0';
     idEntLength = i+1;
 
-    //printf("delent:\n");
+    //printf("\n********************************* DELENT *********************************\n");
     //printf("idEnt: %s - hash: %lu\n", idEnt, hashFunction(idEnt));
 
     struct entity * entity = searchEntityHashTable(idEnt);
@@ -1736,7 +2087,9 @@ void delent(){
 
     numberOfTotalDelent++;
 
-    //fullReport();
+    //printf("**************************************************************************\n\n\n");
+
+
 
     //O(1):                 cerca se la entity esiste nell'hash table delle entities, se non esiste non fa nulla
     //O(k):                 una volta trovata accede all'albero 1 delle relation tracker e per ognuna di queste:
@@ -1783,6 +2136,11 @@ void delrel(){
     idRel[i] = '\0';
     idDestLength = i +1;
 
+    //printf("\n********************************* DELREL *********************************\n");
+    //printf("idOrig: %s \n", idOrig);
+    //printf("idDest: %s \n", idDest);
+    //printf("idRel: %s \n", idRel);
+
     struct entity * entityOrig = searchEntityHashTable(idOrig);
     if(entityOrig == NULL){
         //printf("entity %s doesn't exists\n", idOrig);
@@ -1808,23 +2166,26 @@ void delrel(){
         return;
     }
 
-    struct relationSentToOrReceivedFrom * relationSentTo = searchRelationSentToOrReceivedFrom(idDest, relTrackerOrig->sentToTreeHead);
-    if(relationSentTo == &nullRelationSentToOrReceivedFromNode){
+    struct relationSentToOrReceivedFrom * relationReceivedFromOrSentTo = searchRelationSentTo(idDest, relTrackerOrig->sentToTreeHead);
+    if(relationReceivedFromOrSentTo == &nullRelationSentToOrReceivedFromNode){
         //printf("relation %s doesn't exists in entities %s and %s\n", idRel, idOrig, idDest);
         //printf("\tnote: couldn't find relationSentTo from the relationTracker orig\n");
         return;
     }
 
-    struct relationTracker_1 * relTrackerDest = relationSentTo->externalRelationTracker;
+    struct relationTracker_1 * relTrackerDest = relationReceivedFromOrSentTo->destRelationTracker;
 
-    struct relationSentToOrReceivedFrom * relationReceivedFrom = searchRelationSentToOrReceivedFrom(idOrig, relTrackerDest->receivedFromTreeHead);
-
-    //free(deleteRelationSentToOrReceivedFrom(relationReceivedFrom, &(relTrackerDest->receivedFromTreeHead)));
-    deleteRelationSentToOrReceivedFrom(relationReceivedFrom, &(relTrackerDest->receivedFromTreeHead));
-    //printf("deleted the relationReceivedFrom from the dest\n");
+    //printf("deleting from the orig-sentToTreeHead and from the dest-receivedFromTreeHead the relation: %s->%s\n",
+    //        relationReceivedFromOrSentTo->origRelationTracker->entity->name,
+    //        relationReceivedFromOrSentTo->destRelationTracker->entity->name);
+    deleteRelationSentTo(
+            relationReceivedFromOrSentTo,
+            &(relTrackerOrig->sentToTreeHead));
+    deleteRelationReceivedFrom(
+            relationReceivedFromOrSentTo,
+            &(relTrackerDest->receivedFromTreeHead));
 
     //fix albero 2
-    //free(deleteRelationTracker_2(relation, relTrackerDest->relationTracker_2));
     deleteRelationTracker_2(relation, relTrackerDest->relationTracker_2);
     relTrackerDest->numberOfRelationReceived--;
     relTrackerDest->relationTracker_2 = malloc(sizeof(struct relationTracker_2));
@@ -1835,20 +2196,14 @@ void delrel(){
     insertRelationTracker_2(relation, relTrackerDest->relationTracker_2);
     //printf("decremented numberOfRelationReceived of relation %s of entity dest %s\n", idRel, idDest);
 
-    //free(deleteRelationSentToOrReceivedFrom(relationSentTo, &(relTrackerOrig->sentToTreeHead)));
-    deleteRelationSentToOrReceivedFrom(relationSentTo, &(relTrackerOrig->sentToTreeHead));
-    //printf("deleted the relationReceivedFrom from the orig\n");
-
     if(relTrackerDest != relTrackerOrig) {
         if (relTrackerOrig->receivedFromTreeHead == &nullRelationSentToOrReceivedFromNode &&
             relTrackerOrig->sentToTreeHead == &nullRelationSentToOrReceivedFromNode) {
-            //delete the relTrackerOrig in albero 1 e albero 2
             deleteRelationTracker_2(relation, relTrackerOrig->relationTracker_2);
             deleteRelationTracker_1(entityOrig, relTrackerOrig);
         }
         if (relTrackerDest->receivedFromTreeHead == &nullRelationSentToOrReceivedFromNode &&
             relTrackerDest->sentToTreeHead == &nullRelationSentToOrReceivedFromNode) {
-            //delete the relTrackerOrig in albero 1 e albero 2
             deleteRelationTracker_2(relation, relTrackerDest->relationTracker_2);
             deleteRelationTracker_1(entityDest, relTrackerDest);
         }
@@ -1863,7 +2218,11 @@ void delrel(){
 
     numberOfTotalDelrel++;
 
+    //printf("**************************************************************************\n\n\n");
+
     //fullReport();
+
+
 
     //O(1):     cerca se le entities esistono nell'hash table, se non esistono non fa nulla
     //O(log k): dalla entity origin accede all'albero 1 delle relation tracker e cerca la relation da eliminare, se non esiste non fa nulla
@@ -1886,17 +2245,17 @@ void printAllRelationTrackerRecursive_1(struct relationTracker_1 * x);
 void printAllRelationTrackerRecursive_2(struct relationTracker_2 * x);
 void printAllRelationSentToRecursive(struct relationSentToOrReceivedFrom * x){
     if(x != &nullRelationSentToOrReceivedFromNode){
-        printAllRelationSentToRecursive(x->left);
-        printf("\t\t\t%s->%s\n", x->internalEntity->name, x->externalRelationTracker->entity->name);
-        printAllRelationSentToRecursive(x->right);
+        printAllRelationSentToRecursive(x->leftSentTo);
+        printf("\t\t\t%s->%s, %u\n", x->origRelationTracker->entity->name, x->destRelationTracker->entity->name, x);
+        printAllRelationSentToRecursive(x->rightSentTo);
     }
 }
 void printALlRelationReceivedFromRecursive(struct relationSentToOrReceivedFrom * x){
     if(x != &nullRelationSentToOrReceivedFromNode){
-        printALlRelationReceivedFromRecursive(x->left);
-        printf("\t\t\t%s<-%s\n", x->internalEntity->name, x->externalRelationTracker->entity->name);
+        printALlRelationReceivedFromRecursive(x->leftReceivedFrom);
+        printf("\t\t\t%s<-%s, %u\n", x->destRelationTracker->entity->name, x->origRelationTracker->entity->name, x);
         numberOfRelationReceivedPrinted_1++;
-        printALlRelationReceivedFromRecursive(x->right);
+        printALlRelationReceivedFromRecursive(x->rightReceivedFrom);
     }
 }
 void printAllRelationTrackerRecursive_1(struct relationTracker_1 * x){
@@ -2026,28 +2385,50 @@ void printReportRecursive(struct relation * relation){
     }
 }
 
-void fullReport();
+void printEntity(struct entity * entity);
+void printEntityRelationTrackerRecursive_1(struct relationTracker_1 * x);
+void printEntity(struct entity * entity){
+    if(entity != NULL) {
+        printf("hash table cell number [%d]\n", hashFunction(entity->name));
+        printf("\tentity: %s\n", entity->name);
+        printEntityRelationTrackerRecursive_1(entity->relationTrackerEntityTreeHead);
+        printf("\n");
+    }
+    else{
+        printf("entity is NULL, couldn't print it\n");
+    }
+}
+void printEntityRelationTrackerRecursive_1(struct relationTracker_1 * x){
+    if(x != &nullRelationTrackerNode_1){
+        printEntityRelationTrackerRecursive_1(x->leftNodeEntityTree);
+        printf("\t\t%s | relation received: %d\n", x->relation->name, x->numberOfRelationReceived);
+        printALlRelationReceivedFromRecursive(x->receivedFromTreeHead);
+        printAllRelationSentToRecursive(x->sentToTreeHead);
+        printEntityRelationTrackerRecursive_1(x->rightNodeEntityTree);
+    }
+}
 void fullReport(){
     int numberOfEntityPrinted = 0;
     numberOfRelationReceivedPrinted_1 = 0;
     numberOfRelationReceivedPrinted_2 = 0;
     for (int i = 0; i < ENTITY_HASHTABLE_DIMENSION; ++i) {
         if (entityHashTable[i] != NULL) {
-
             printf("hash table cell number [%d]\n", i);
 
             struct entity * currentEntity = entityHashTable[i];
             while (currentEntity != NULL) {
 
                 printf("\tentity: %s\n", currentEntity->name);
-                numberOfEntityPrinted++;
 
                 printAllRelationTrackerRecursive_1(currentEntity->relationTrackerEntityTreeHead);
+
+                numberOfEntityPrinted++;
 
                 currentEntity = currentEntity->nextEntity;
             }
 
             printf("\n");
+
         }
     }
 
@@ -2089,6 +2470,8 @@ void fullReport(){
 }
 void report() {
 
+    //printf("\n********************************* REPORT *********************************\n");
+
     //fullReport();
 
     alreadyPrintedSomething = 0;
@@ -2099,6 +2482,7 @@ void report() {
     reportDone = 0;
     fputs("\n", stdout);
 
+    //printf("**************************************************************************\n\n\n");
 
     //O(k*n):  itera in ogni relation e stampa la lista di max
     //
