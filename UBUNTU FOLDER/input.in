@@ -1,6 +1,0 @@
-addent "a"
-addent "b"
-addrel "a" "b" "rel"
-delent "b"
-report
-end
