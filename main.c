@@ -26,7 +26,7 @@ char idRel[STRING_DIMENSION];
 int idRelLenght = 0;
 
 
-/* entity (quadrato) */
+/* entity */
 // è in una hash table
 // stringa che la rappresenta
 // riferimento all'albero delle sue relation tracker
@@ -37,7 +37,7 @@ struct entity{
     struct entity * nextEntity;
 };
 
-/* relation (stella) */
+/* relation */
 // è in un albero ordinato alfanumericamente e con possibiltà di essere iterato
 // stringa che rappresenta la relazione
 // riferimento all'albero 2 di relation tracker
@@ -51,7 +51,7 @@ struct relation {
     struct relationTracker_2 * relationTrackerTreeHead;
 };
 
-/* relation tracker (rettangolo) */
+/* relation tracker */
 // è in due alberi:
 //      albero 1- ordinato alfanumericamente e raccolto in base all'entity origin che rappresenta
 //      albero 2- ordinato secondo il numero massimo di relation received e raccolto in base alla relation che rappresenta
@@ -88,11 +88,11 @@ struct relationTracker_2{
     int nodeColorRelationTree:1;
 };
 
-/* relation sent to (rombo1) */
+/* relation sent to */
 // nota: è accessibile dall'entity (che si sta eliminando)
 // è in un albero ordinato in base all'indirizzo di memeoria della relation tracker receiver e con posibilità di essere iterato
 // riferimento alla relation tracker receiver
-/* relation received from (rombo2) */
+/* relation received from */
 // nota: è accessibile dall'entity destinataria
 // è in un albero ordinato in base all'indirizzo di memoria della relation tracker origin e con possibilità di essere iterato
 // riferimento alla relation tracker origin
@@ -192,7 +192,7 @@ void deleteRelationReceivedFrom_FIXUP(struct relationSentToOrReceivedFrom * x, s
 
 void fullReport();
 
-/* entity (quadrato) */
+/* entity */
 // è in una hash table
 // stringa che la rappresenta
 // riferimento all'albero delle sue relation tracker
@@ -326,7 +326,7 @@ void deleteEntityHashTable(char * entity){
     }
 }
 
-/* relation (stella) */
+/* relation */
 // è in un albero ordinato alfanumericamente e con possibiltà di essere iterato
 // stringa che rappresenta la relazione
 // riferimento all'albero 2 di relation tracker
@@ -583,7 +583,7 @@ void deleteRelation_FIXUP(struct relation * x){
 }
 
 
-/* relation tracker (rettangolo) */
+/* relation tracker */
 // è in due alberi:
 //      albero 1- ordinato alfanumericamente e raccolto in base all'entity origin che rappresenta
 //      albero 2- ordinato secondo il numero massimo di relation received e raccolto in base alla relation che rappresenta
@@ -1180,7 +1180,7 @@ void deleteRelationTracker_2_FIXUP(struct relation * relation, struct relationTr
 
 
 
-/* relation sent to (rombo1) */
+/* relation sent to */
 // nota: è accessibile dall'entity (che si sta eliminando)
 // è in un albero ordinato in base all'indirizzo di memeoria della relation tracker receiver e con posibilità di essere iterato
 // riferimento alla relation tracker receiver
