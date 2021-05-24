@@ -1,6 +1,6 @@
 # High efficiency Entity-Relation Data Structure
 
-**The main focus of the entire project is on complex data structures **
+**The main focus of the entire project is on complex data structures**
 
 ## Topic
 
