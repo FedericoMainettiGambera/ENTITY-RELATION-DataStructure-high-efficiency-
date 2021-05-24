@@ -35,15 +35,19 @@ number of relationships the entity receives
 ## Commands
 
 The commands that can be read are the following:
-• **addent ⟨id_ent⟩**: adds an entity identified by "id_ent" to the set of monitored entities; if the entity is already monitored, it does nothing.
-• **delent ⟨id_ent⟩**: deletes the entity identified by "id_ent" from the set of monitored entities; delete all relations of which "id_ent" is a part
+- **addent ⟨id_ent⟩**: adds an entity identified by "id_ent" to the set of monitored entities; if the entity is already monitored, it does nothing.
+- **delent ⟨id_ent⟩**: deletes the entity identified by "id_ent" from the set of monitored entities; delete all relations of which "id_ent" is a part
 (both as origin and as destination).
-• **addrel ⟨id_ent⟩ ⟨id_ent⟩ ⟨id_ent⟩**: adds a relationship identified by "id_rel" between the entities "id_orig" and "id_dest", where "id_dest" is the recipient of the
+- **addrel ⟨id_ent⟩ ⟨id_ent⟩ ⟨id_ent⟩**: adds a relationship identified by "id_rel" between the entities "id_orig" and "id_dest", where "id_dest" is the recipient of the
 report. If the relationship between "id_orig" and "id_dest" already exists, or if at least one of the entities is not monitored, it does nothing. The
 monitoring the "id_rel" relationship type implicitly begins with the first "addrel" command that affects it.
-• **delrel ⟨id_ent⟩ ⟨id_ent⟩ ⟨id_ent⟩**: deletes the relationship identified by "id_rel" between the entities "id_orig" and "id_dest" (where "id_dest" is the receiver of the relationship); if there is no relation "id_rel" between "id_orig" and "id_dest" (with "id_dest" as receiver), it does nothing 
-• **report**: outputs the list of all types of relationships, reporting for each one of them the corrisponding entity with the largest number of incoming relationships
-• **end**: end of the command sequence
+- **delrel ⟨id_ent⟩ ⟨id_ent⟩ ⟨id_ent⟩**: deletes the relationship identified by "id_rel" between the entities "id_orig" and "id_dest" (where "id_dest" is the receiver of the relationship); if there is no relation "id_rel" between "id_orig" and "id_dest" (with "id_dest" as receiver), it does nothing 
+- **report**: outputs the list of all types of relationships, reporting for each one of them the corrisponding entity with the largest number of incoming relationships
+- **end**: end of the command sequence
 
 ## Repository structure
 
+- main.c file contains all the code of the application;
+- documents folder contains the specification of the project;
+- test folder contains some test files to input to the main.c program;
+- old_versions folder contains previous versions of the application;
