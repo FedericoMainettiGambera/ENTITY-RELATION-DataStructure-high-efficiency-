@@ -1,5 +1,7 @@
 # High efficiency Entity-Relation Data Structure
 
+Project for "Alithm and Principles of Computer Science" course of Politecnico di Milano.
+
 **The main focus of the entire project is on complex data structures**
 
 ## Topic
