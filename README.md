@@ -1,55 +1,49 @@
 # High efficiency Entity-Relation Data Structure
 
-Si vuole implementare un meccanismo di monitoraggio di relazioni tra
-entità (per esempio persone) che cambiano nel tempo
+## Topic
 
-Le relazioni tra entità non sono necessariamente simmetriche. Per
-esempio, Alice può essere “amica” di Bruno, ma l’amicizia non è
-reciprocata
+The purpose is to implement a mechanism for monitoring relations between
+entities (e.g. people) that change over time.
 
-In maniera più astratta, il meccanismo monitora i seguenti fenomeni:
-• Una nuova entità comincia ad essere monitorata
-• Una entità monitorata smette di esserlo
-• Una nuova relazione viene stabilita tra 2 entità monitorate
-• Una relazione esistente tra 2 entità monitorate cessa di esistere
-Ogni entità ha un nome identificativo
-Ci possono essere diversi tipi di relazioni tra entità, ognuna identificata da un
-nome
-Ogni relazione ha un verso e non è necessariamente simmetrica
-A seguito di un apposito comando, il sistema restituisce, per ogni relazione,
-l’entità che “riceve” più relazioni
-L’applicativo dovrà essere ottimizzato per gestire un grande numero di entità e
-istanze di relazioni, ma generalmente pochi tipi (identificativi) di relazione
+Relationships between entities are not necessarily symmetrical. For
+for example, Alice may be Bruno's "friend", but friendship is not
+reciprocated.
 
-Implementazione in linguaggio C standard (con la sola libc) di un
-programma che legge da standard input una sequenza di comandi,
-ognuno corrispondente ad un cambiamento nelle entità o nelle
-relazioni tra entità e, quando richiesto, produce su standard output,
-per ogni tipo di relazione monitorata, l'identificativo dell'entità che è il
-ricevente del maggior numero di istanze di quella relazione, e il
-numero di relazioni che l'entità riceve
+More abstractly, the mechanism monitors the following phenomena:
+- A new entity begins to be monitored;
+- A monitored entity stops being monitored;
+- A new relationship is established between 2 monitored entities;
+- A relationship existing between 2 monitored entities ceases to exist.
+- Following a specific command, the system returns, for each relationship, the entity that "receives" the most relationships
 
-I comandi che possono essere letti sono i seguenti:
-• addent id_ent ⟨id_ent⟩ ⟩
-• aggiunge un'entità identificata da "id_ent" all'insieme delle entità monitorate; se l'entità è già monitorata, non fa nulla
-• delent id_ent ⟨id_ent⟩ ⟩
-• elimina l'entità identificata da "id_ent" dall'insieme delle entità monitorate; elimina tutte le relazioni di cui "id_ent" fa parte
-(sia come origine, che come destinazione)
-• addrel id_orig id_dest id_rel ⟨id_ent⟩ ⟩ ⟨id_ent⟩ ⟩ ⟨id_ent⟩ ⟩
-• aggiunge una relazione – identificata da "id_rel" – tra le entità "id_orig" e "id_dest", in cui "id_dest" è il ricevente della
-relazione. Se la relazione tra "id_orig" e "id_dest" già esiste, o se almeno una delle entità non è monitorata, non fa nulla. Il
-monitoraggio del tipo di relazione "id_rel" inizia implicitamente con il primo comando "addrel" che la riguarda.
-• delrel id_orig id_dest id_rel ⟨id_ent⟩ ⟩ ⟨id_ent⟩ ⟩ ⟨id_ent⟩ ⟩
-• elimina la relazione identificata da "id_rel" tra le entità "id_orig" e "id_dest" (laddove "id_dest" è il ricevente della relazione);
-se non c'è relazione "id_rel" tra "id_orig" e "id_dest" (con "id_dest" come ricevente), non fa nulla
-• report
-• emette in output l’elenco delle relazioni, riportando per ciascuna le entità con il maggior numero di relazioni entranti, come
-spiegato in seguito
-• end
-• termine della sequenza di comandi
+Some more useful informations:
+- Each entity has an identifying name;
+- There can be several types of relationships between entities, each identified by a name
+- Every relationship has a direction and is not necessarily symmetrical
+- The application must be optimized to manage a large number of entities and instances of relationships, but generally few (identifying) types of relationships
 
-TEST
+## Programming language
 
-DOCUMENTS
+Standard **C language** implementation (with **libc only**) of a
+program that reads a sequence of commands from standard input,
+each corresponding to a change in the entities or in the
+relations between entities and, when required, produces on standard output,
+for each type of monitored relationship, the identifier of the entity which is the
+recipient of the greatest number of instances of that relationship, and the
+number of relationships the entity receives
 
-COME HO FATTO IN BREVE
+## Commands
+
+The commands that can be read are the following:
+• **addent ⟨id_ent⟩**: adds an entity identified by "id_ent" to the set of monitored entities; if the entity is already monitored, it does nothing.
+• **delent ⟨id_ent⟩**: deletes the entity identified by "id_ent" from the set of monitored entities; delete all relations of which "id_ent" is a part
+(both as origin and as destination).
+• **addrel ⟨id_ent⟩ ⟨id_ent⟩ ⟨id_ent⟩**: adds a relationship identified by "id_rel" between the entities "id_orig" and "id_dest", where "id_dest" is the recipient of the
+report. If the relationship between "id_orig" and "id_dest" already exists, or if at least one of the entities is not monitored, it does nothing. The
+monitoring the "id_rel" relationship type implicitly begins with the first "addrel" command that affects it.
+• **delrel ⟨id_ent⟩ ⟨id_ent⟩ ⟨id_ent⟩**: deletes the relationship identified by "id_rel" between the entities "id_orig" and "id_dest" (where "id_dest" is the receiver of the relationship); if there is no relation "id_rel" between "id_orig" and "id_dest" (with "id_dest" as receiver), it does nothing 
+• **report**: outputs the list of all types of relationships, reporting for each one of them the corrisponding entity with the largest number of incoming relationships
+• **end**: end of the command sequence
+
+## Repository structure
+
