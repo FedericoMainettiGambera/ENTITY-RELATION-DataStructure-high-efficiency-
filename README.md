@@ -1,5 +1,7 @@
 # High efficiency Entity-Relation Data Structure
 
+**The main focus of the entire project is on complex data structures **
+
 ## Topic
 
 The purpose is to implement a mechanism for monitoring relations between
