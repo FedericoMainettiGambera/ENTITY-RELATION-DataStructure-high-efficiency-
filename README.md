@@ -53,5 +53,5 @@ monitoring the "id_rel" relationship type implicitly begins with the first "addr
 
 - main.c file contains all the code of the application;
 - documents folder contains the specification of the project;
-- test folder contains some test files to input to the main.c program;
+- test folder contains some test files to give as inputs to the main.c program;
 - old_versions folder contains previous versions of the application;
