@@ -1,4 +1,4 @@
-# High efficiency Entity-Relation Data Structure
+# High efficiency Entity-Relationship Data Structure
 
 Project for "Alithm and Principles of Computer Science" course of Politecnico di Milano.
 
