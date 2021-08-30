@@ -1,3 +1,9 @@
+          TLDR:
+          Implementation in Standard C language (with libc only) of a mechanism for monitoring
+          relations between large quantities of entities that change over time.
+          The application is heavily optimized in terms of speed and memory usage.
+          Particular focus has been put on the use of complex data structures and algorithms.
+
 # High efficiency Entity-Relationship Data Structure
 
 Project for "Alithm and Principles of Computer Science" course of Politecnico di Milano.
